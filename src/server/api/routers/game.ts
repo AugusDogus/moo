@@ -7,6 +7,7 @@ import { EventEmitter } from "events";
 import {
   createTRPCRouter,
   protectedProcedure,
+  publicProcedure,
 } from "~/server/api/trpc";
 import { gameRooms, games, gameMoves } from "~/server/db/schema";
 import { generateRoomCode, calculateBullsAndCows, isWinningGuess, isValidCode } from "~/lib/game-utils";
@@ -414,8 +415,8 @@ export const gameRouter = createTRPCRouter({
       });
     }),
 
-  // Get room info
-  getRoomInfo: protectedProcedure
+  // Get room info (public so unauthenticated users can see room details)
+  getRoomInfo: publicProcedure
     .input(z.object({
       code: z.string().length(4),
     }))
