@@ -1,29 +1,39 @@
-# Create T3 App
+# moo
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+a cozy cottage-core deduction game where you crack four-emoji codes with bulls and cows feedback.
 
-## What's next? How do I make an app with this?
+## Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- **Classic Mastermind Logic**: Guess the secret four-emoji code
+- **Bulls & Cows Feedback**: Get hints about correct positions and symbols
+- **Cozy Aesthetic**: Soft cottage-core design with pastoral vibes
+- **Emoji Symbols**: 🐄 🥛 🍄 🌸 🌿 🧺 instead of colored pegs
+- **Social Features**: Share scores and compete with friends
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Tech Stack
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+This project is built with the following technologies:
 
-## Learn More
+- [Next.js](https://nextjs.org) - React framework
+- [Better Auth](https://better-auth.com) - Authentication
+- [Drizzle](https://orm.drizzle.team) - Database ORM
+- [Tailwind CSS](https://tailwindcss.com) - Styling
+- [shadcn/ui](https://ui.shadcn.com) - UI components
+- [tRPC](https://trpc.io) - Type-safe APIs
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+*This project was initially scaffolded using [create-t3-app](https://create.t3.gg/).*
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## Getting Started
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+1. Clone the repository
+2. Install dependencies: `bun install`
+3. Set up your environment variables: `cp .env.example .env`
+4. Run the development server: `bun dev`
 
-## How do I deploy this?
+## Contributing
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Contributions are welcome! Please feel free to submit issues and pull requests to help improve moo.
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
