@@ -17,6 +17,7 @@ export const posts = createTable(
   (d) => ({
     id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
     name: d.text({ length: 256 }),
+    userId: d.text().notNull(),
     createdAt: d
       .integer({ mode: "timestamp" })
       .default(sql`(unixepoch())`)
@@ -25,3 +26,64 @@ export const posts = createTable(
   }),
   (t) => [index("name_idx").on(t.name)],
 );
+
+export const user = createTable("user", (d) => ({
+  id: d.text().primaryKey(),
+  name: d.text().notNull(),
+  email: d.text().notNull().unique(),
+  emailVerified: d
+    .integer({ mode: "boolean" })
+    .$defaultFn(() => false)
+    .notNull(),
+  image: d.text(),
+  createdAt: d
+    .integer({ mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: d
+    .integer({ mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+}));
+
+export const session = createTable("session", (d) => ({
+  id: d.text().primaryKey(),
+  expiresAt: d.integer({ mode: "timestamp" }).notNull(),
+  token: d.text().notNull().unique(),
+  createdAt: d.integer({ mode: "timestamp" }).notNull(),
+  updatedAt: d.integer({ mode: "timestamp" }).notNull(),
+  ipAddress: d.text(),
+  userAgent: d.text(),
+  userId: d
+    .text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+}));
+
+export const account = createTable("account", (d) => ({
+  id: d.text().primaryKey(),
+  accountId: d.text().notNull(),
+  providerId: d.text().notNull(),
+  userId: d
+    .text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  accessToken: d.text(),
+  refreshToken: d.text(),
+  idToken: d.text(),
+  accessTokenExpiresAt: d.integer({ mode: "timestamp" }),
+  refreshTokenExpiresAt: d.integer({ mode: "timestamp" }),
+  scope: d.text(),
+  password: d.text(),
+  createdAt: d.integer({ mode: "timestamp" }).notNull(),
+  updatedAt: d.integer({ mode: "timestamp" }).notNull(),
+}));
+
+export const verification = createTable("verification", (d) => ({
+  id: d.text().primaryKey(),
+  identifier: d.text().notNull(),
+  value: d.text().notNull(),
+  expiresAt: d.integer({ mode: "timestamp" }).notNull(),
+  createdAt: d.integer({ mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: d.integer({ mode: "timestamp" }).$defaultFn(() => new Date()),
+}));
