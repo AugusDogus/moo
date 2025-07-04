@@ -3,10 +3,8 @@ import { headers } from "next/headers";
 import { auth } from "~/lib/auth/server";
 import { HydrateClient } from "~/trpc/server";
 import { CreateRoomCard, JoinRoomCard } from "~/components/game/room-controls";
-import { signIn } from "~/lib/auth/client";
-import { Button } from "~/components/ui/button";
+import { SignInButton } from "~/components/auth/sign-in-button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { User } from "lucide-react";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -46,12 +44,7 @@ export default async function Home() {
                     Sign in to create or join games with friends.
                   </div>
                   
-                  <form action={signIn}>
-                    <Button type="submit" className="w-full" size="lg">
-                      <User className="h-4 w-4" />
-                      Sign in with Discord
-                    </Button>
-                  </form>
+                  <SignInButton />
                 </CardContent>
               </Card>
             </div>
