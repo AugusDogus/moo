@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { AuthRedirectHandler } from "~/components/auth/auth-redirect-handler";
 
 export const metadata: Metadata = {
   title: "moo",
@@ -17,7 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <AuthRedirectHandler />
+          {children}
+        </TRPCReactProvider>
       </body>
     </html>
   );
