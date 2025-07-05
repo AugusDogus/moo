@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 export function CreateRoomCard() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
-  
+
   const createRoom = api.game.createRoom.useMutation({
     onSuccess: (data) => {
       router.push(`/game/${data.code}`);
@@ -33,10 +33,10 @@ export function CreateRoomCard() {
         <CardTitle className="text-center text-lg">Create New Game</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-center text-sm">
           Create a new game room and share the code with a friend
         </div>
-        
+
         <Button
           onClick={handleCreateRoom}
           disabled={isCreating || createRoom.isPending}
@@ -45,9 +45,9 @@ export function CreateRoomCard() {
         >
           {isCreating || createRoom.isPending ? "Creating..." : "Create Room"}
         </Button>
-        
+
         {createRoom.error && (
-          <div className="text-sm text-destructive text-center">
+          <div className="text-destructive text-center text-sm">
             {createRoom.error.message}
           </div>
         )}
@@ -60,7 +60,7 @@ export function JoinRoomCard() {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
-  
+
   const joinRoom = api.game.joinRoom.useMutation({
     onSuccess: () => {
       // Always go to the main game page, let it handle the state
@@ -74,13 +74,13 @@ export function JoinRoomCard() {
 
   const handleJoinRoom = async () => {
     if (roomCode.length !== 4) return;
-    
+
     setIsJoining(true);
     joinRoom.mutate({ code: roomCode });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+    const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, "");
     if (value.length <= 4) {
       setRoomCode(value);
     }
@@ -92,21 +92,21 @@ export function JoinRoomCard() {
         <CardTitle className="text-center text-lg">Join Game</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-center text-sm">
           Enter a 4-letter room code to join or return to a game
         </div>
-        
+
         <div className="space-y-2">
           <Input
             placeholder="ABCD"
             value={roomCode}
             onChange={handleInputChange}
             maxLength={4}
-            className="text-center text-lg font-mono tracking-widest"
+            className="text-center font-mono text-lg tracking-widest"
             disabled={isJoining || joinRoom.isPending}
           />
         </div>
-        
+
         <Button
           onClick={handleJoinRoom}
           disabled={roomCode.length !== 4 || isJoining || joinRoom.isPending}
@@ -115,9 +115,9 @@ export function JoinRoomCard() {
         >
           {isJoining || joinRoom.isPending ? "Joining..." : "Enter Room"}
         </Button>
-        
+
         {joinRoom.error && (
-          <div className="text-sm text-destructive text-center">
+          <div className="text-destructive text-center text-sm">
             {joinRoom.error.message}
           </div>
         )}
@@ -134,11 +134,17 @@ interface RoomInfoProps {
   playerCount: number;
 }
 
-export function RoomInfo({ code, status, createdBy, currentUserId, playerCount }: RoomInfoProps) {
+export function RoomInfo({
+  code,
+  status,
+  createdBy,
+  currentUserId,
+  playerCount,
+}: RoomInfoProps) {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+        <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
           Room {code}
           <Badge variant={status === "waiting" ? "secondary" : "default"}>
             {status}
@@ -147,25 +153,27 @@ export function RoomInfo({ code, status, createdBy, currentUserId, playerCount }
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center">
-          <div className="text-sm text-muted-foreground">
-            {createdBy === currentUserId ? "You created this room" : "Created by host"}
+          <div className="text-muted-foreground text-sm">
+            {createdBy === currentUserId
+              ? "You created this room"
+              : "Created by host"}
           </div>
-          <div className="text-lg font-semibold">
-            {playerCount}/2 players
-          </div>
+          <div className="text-lg font-semibold">{playerCount}/2 players</div>
         </div>
-        
+
         {status === "waiting" && (
-          <div className="text-center text-sm text-muted-foreground">
-            {playerCount === 1 ? "Waiting for another player..." : "Ready to start!"}
+          <div className="text-muted-foreground text-center text-sm">
+            {playerCount === 1
+              ? "Waiting for another player..."
+              : "Ready to start!"}
           </div>
         )}
-        
+
         <div className="text-center">
-          <div className="text-xs text-muted-foreground mb-2">
+          <div className="text-muted-foreground mb-2 text-xs">
             Share this code with a friend:
           </div>
-          <div className="inline-block bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+          <div className="bg-muted inline-block rounded px-4 py-2 font-mono text-lg tracking-widest">
             {code}
           </div>
         </div>

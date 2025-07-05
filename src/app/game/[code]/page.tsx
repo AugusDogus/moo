@@ -19,7 +19,7 @@ export default function GamePage() {
   const roomCode = params.code as string;
   const [copied, setCopied] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  
+
   const [selectedCode, setSelectedCode] = useState<string[]>(["", "", "", ""]);
   const [guess, setGuess] = useState<string[]>(["", "", "", ""]);
 
@@ -27,36 +27,48 @@ export default function GamePage() {
   const { data: session, isPending: sessionLoading } = authClient.useSession();
 
   // Get room info (public endpoint)
-  const { data: roomInfo, isLoading: roomLoading, error: roomError } = api.game.getRoomInfo.useQuery(
+  const {
+    data: roomInfo,
+    isLoading: roomLoading,
+    error: roomError,
+  } = api.game.getRoomInfo.useQuery(
     { code: roomCode },
-    { 
+    {
       enabled: !!roomCode,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false
-    }
+      refetchOnReconnect: false,
+    },
   );
 
   // Get user's role in this room if authenticated
   const { data: userRole } = api.game.getUserRoomRole.useQuery(
     { code: roomCode },
-    { 
+    {
       enabled: !!roomCode && !!session?.user,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false
-    }
+      refetchOnReconnect: false,
+    },
   );
 
   // Get game state if user is a player or creator
-  const { data: gameState, isLoading: gameLoading, error: gameError, refetch } = api.game.getGameStateByCode.useQuery(
+  const {
+    data: gameState,
+    isLoading: gameLoading,
+    error: gameError,
+    refetch,
+  } = api.game.getGameStateByCode.useQuery(
     { code: roomCode },
-    { 
-      enabled: !!roomCode && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
+    {
+      enabled:
+        !!roomCode &&
+        !!session?.user &&
+        (userRole?.role === "creator" || userRole?.role === "player"),
       retry: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: true,
-      staleTime: 0 // Always fetch fresh data when subscription triggers refetch
-    }
+      staleTime: 0, // Always fetch fresh data when subscription triggers refetch
+    },
   );
 
   const joinRoom = api.game.joinRoom.useMutation({
@@ -89,7 +101,10 @@ export default function GamePage() {
   api.game.subscribeToGameUpdates.useSubscription(
     { roomId: roomInfo?.id ?? "" },
     {
-      enabled: !!roomInfo?.id && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
+      enabled:
+        !!roomInfo?.id &&
+        !!session?.user &&
+        (userRole?.role === "creator" || userRole?.role === "player"),
       onData: (event: unknown) => {
         if (event && typeof event === "object" && "type" in event) {
           if (event.type === "game_started") {
@@ -97,12 +112,15 @@ export default function GamePage() {
             void utils.game.getGameStateByCode.invalidate({ code: roomCode });
             void utils.game.getUserRoomRole.invalidate({ code: roomCode });
             void utils.game.getRoomInfo.invalidate({ code: roomCode });
-          } else if (event.type === "move_made" || event.type === "game_finished") {
+          } else if (
+            event.type === "move_made" ||
+            event.type === "game_finished"
+          ) {
             void refetch();
           }
         }
       },
-    }
+    },
   );
 
   const copyRoomCode = async () => {
@@ -117,25 +135,25 @@ export default function GamePage() {
 
   const handleJoinRoom = async () => {
     if (!session?.user || !userRole) return;
-    
+
     if (userRole.role !== "visitor") {
       console.error("User is not a visitor to this room");
       return;
     }
-    
+
     setIsJoining(true);
     joinRoom.mutate({ code: roomCode });
   };
 
   const handleSetCode = () => {
-    if (selectedCode.every(emoji => emoji !== "")) {
+    if (selectedCode.every((emoji) => emoji !== "")) {
       const code = emojisToCode(selectedCode);
       setPlayerCode.mutate({ roomCode, code });
     }
   };
 
   const handleMakeGuess = () => {
-    if (guess.every(emoji => emoji !== "")) {
+    if (guess.every((emoji) => emoji !== "")) {
       const guessCode = emojisToCode(guess);
       makeGuess.mutate({ roomCode, guess: guessCode });
     }
@@ -143,23 +161,35 @@ export default function GamePage() {
 
   const hasPlayerSetCode = () => {
     if (!gameState) return false;
-    return gameState.isPlayer1 ? !!gameState.game.player1Code : !!gameState.game.player2Code;
+    return gameState.isPlayer1
+      ? !!gameState.game.player1Code
+      : !!gameState.game.player2Code;
   };
 
   const canMakeGuess = () => {
     if (!gameState || gameState.game.status !== "playing") return false;
-    
+
     // Check if player has already made a guess this round
     const currentRound = gameState.game.currentRound;
-    const playerMoves = gameState.moves.filter((move: { playerId: string }) => move.playerId === (gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id));
-    const currentRoundMove = playerMoves.find((move: { round: number }) => move.round === currentRound);
-    
+    const playerMoves = gameState.moves.filter(
+      (move: { playerId: string }) =>
+        move.playerId ===
+        (gameState.isPlayer1
+          ? gameState.game.player1Id
+          : gameState.game.player2Id),
+    );
+    const currentRoundMove = playerMoves.find(
+      (move: { round: number }) => move.round === currentRound,
+    );
+
     return !currentRoundMove;
   };
 
   const isWinner = () => {
     if (!gameState?.game || gameState.game.status !== "finished") return null;
-    const currentUserId = gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id;
+    const currentUserId = gameState.isPlayer1
+      ? gameState.game.player1Id
+      : gameState.game.player2Id;
     return gameState.game.winnerId === currentUserId;
   };
 
@@ -183,18 +213,16 @@ export default function GamePage() {
           <div className="flex flex-col items-center justify-center gap-8">
             <Card className="w-full max-w-md">
               <CardHeader>
-                <CardTitle className="text-center text-lg text-destructive">
+                <CardTitle className="text-destructive text-center text-lg">
                   Room Not Found
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-center text-muted-foreground">
-                  The room code &quot;{roomCode}&quot; doesn&apos;t exist or has expired.
+                <p className="text-muted-foreground text-center">
+                  The room code &quot;{roomCode}&quot; doesn&apos;t exist or has
+                  expired.
                 </p>
-                <Button
-                  onClick={() => router.push("/")}
-                  className="w-full"
-                >
+                <Button onClick={() => router.push("/")} className="w-full">
                   Back to Home
                 </Button>
               </CardContent>
@@ -215,16 +243,18 @@ export default function GamePage() {
               <h1 className="text-foreground text-4xl font-bold tracking-tight">
                 <span className="text-primary">moo</span>
               </h1>
-              <div className="text-2xl">
-                🐮 🥛 🍄 🌸 🌿 🧺
-              </div>
+              <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
             </div>
 
             <Card className="w-full max-w-md">
               <CardHeader>
-                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
                   Room {roomCode}
-                  <Badge variant={roomInfo?.status === "waiting" ? "secondary" : "default"}>
+                  <Badge
+                    variant={
+                      roomInfo?.status === "waiting" ? "secondary" : "default"
+                    }
+                  >
                     {roomInfo?.status}
                   </Badge>
                 </CardTitle>
@@ -237,11 +267,11 @@ export default function GamePage() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">
+                  <p className="text-muted-foreground mb-2 text-xs">
                     Room code:
                   </p>
                   <div className="flex items-center justify-center gap-2">
-                    <div className="bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+                    <div className="bg-muted rounded px-4 py-2 font-mono text-lg tracking-widest">
                       {roomCode}
                     </div>
                     <Button
@@ -265,15 +295,13 @@ export default function GamePage() {
                   </div>
                 </div>
 
-                <div className="text-center space-y-4">
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <LogIn className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-4">
+                <div className="space-y-4 text-center">
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <LogIn className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                    <p className="text-muted-foreground mb-4 text-sm">
                       Sign in to join this moo game room and start playing!
                     </p>
-                    <SignInWithRedirect 
-                      redirectUrl={`/game/${roomCode}`}
-                    >
+                    <SignInWithRedirect redirectUrl={`/game/${roomCode}`}>
                       Sign in to join game
                     </SignInWithRedirect>
                   </div>
@@ -306,26 +334,26 @@ export default function GamePage() {
               <h1 className="text-foreground text-4xl font-bold tracking-tight">
                 <span className="text-primary">moo</span>
               </h1>
-              <div className="text-2xl">
-                🐮 🥛 🍄 🌸 🌿 🧺
-              </div>
+              <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
             </div>
 
             <Card className="w-full max-w-md">
               <CardHeader>
-                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
                   Room {roomCode}
-                  <Badge variant={roomInfo?.status === "waiting" ? "secondary" : "default"}>
+                  <Badge
+                    variant={
+                      roomInfo?.status === "waiting" ? "secondary" : "default"
+                    }
+                  >
                     {roomInfo?.status}
                   </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-lg font-semibold">
-                      1/2 players
-                    </span>
+                  <div className="mb-2 flex items-center justify-center gap-2">
+                    <span className="text-lg font-semibold">1/2 players</span>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Ready to join this game!
@@ -333,11 +361,11 @@ export default function GamePage() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">
+                  <p className="text-muted-foreground mb-2 text-xs">
                     Room code:
                   </p>
                   <div className="flex items-center justify-center gap-2">
-                    <div className="bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+                    <div className="bg-muted rounded px-4 py-2 font-mono text-lg tracking-widest">
                       {roomCode}
                     </div>
                     <Button
@@ -370,16 +398,16 @@ export default function GamePage() {
                   >
                     {isJoining || joinRoom.isPending ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Joining Game...
                       </>
                     ) : (
                       "Join Game"
                     )}
                   </Button>
-                  
+
                   {joinRoom.error && (
-                    <p className="text-sm text-destructive mt-2">
+                    <p className="text-destructive mt-2 text-sm">
                       Failed to join room. Please try again.
                     </p>
                   )}
@@ -427,27 +455,23 @@ export default function GamePage() {
                 <h1 className="text-foreground text-4xl font-bold tracking-tight">
                   <span className="text-primary">moo</span>
                 </h1>
-                <div className="text-2xl">
-                  🐮 🥛 🍄 🌸 🌿 🧺
-                </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
+                <div className="text-muted-foreground text-sm">
                   Room: {roomCode}
                 </div>
               </div>
 
               <Card className="w-full max-w-md">
                 <CardHeader>
-                  <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                  <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
                     Room {roomCode}
                     <Badge variant="secondary">waiting</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="text-lg font-semibold">
-                        1/2 players
-                      </span>
+                    <div className="mb-2 flex items-center justify-center gap-2">
+                      <span className="text-lg font-semibold">1/2 players</span>
                     </div>
                     <p className="text-muted-foreground text-sm">
                       Created by {session.user.name}
@@ -455,11 +479,11 @@ export default function GamePage() {
                   </div>
 
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-2">
+                    <p className="text-muted-foreground mb-2 text-xs">
                       Room code:
                     </p>
                     <div className="flex items-center justify-center gap-2">
-                      <div className="bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+                      <div className="bg-muted rounded px-4 py-2 font-mono text-lg tracking-widest">
                         {roomCode}
                       </div>
                       <Button
@@ -484,13 +508,13 @@ export default function GamePage() {
                   </div>
 
                   <div className="text-center">
-                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                      <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                      <div className="mb-2 flex items-center justify-center gap-2">
                         <span className="text-sm font-medium text-amber-900">
                           Your Game Room
                         </span>
                       </div>
-                      <p className="text-sm text-amber-700 mb-4">
+                      <p className="mb-4 text-sm text-amber-700">
                         Share the code with a friend to start playing!
                       </p>
                       <div className="flex items-center justify-center gap-2">
@@ -527,18 +551,16 @@ export default function GamePage() {
             <div className="flex flex-col items-center justify-center gap-8">
               <Card className="w-full max-w-md">
                 <CardHeader>
-                  <CardTitle className="text-center text-lg text-destructive">
+                  <CardTitle className="text-destructive text-center text-lg">
                     Game Not Found
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-center text-muted-foreground">
-                    This game doesn&apos;t exist or you don&apos;t have access to it.
+                  <p className="text-muted-foreground text-center">
+                    This game doesn&apos;t exist or you don&apos;t have access
+                    to it.
                   </p>
-                  <Button
-                    onClick={() => router.push("/")}
-                    className="w-full"
-                  >
+                  <Button onClick={() => router.push("/")} className="w-full">
                     Back to Home
                   </Button>
                 </CardContent>
@@ -567,13 +589,11 @@ export default function GamePage() {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center gap-8">
           <div className="space-y-4 text-center">
-            <h1 className="text-foreground text-4xl font-bold tracking-tight">
+            <h1 className="text-foreground font-serif text-4xl font-bold tracking-tight">
               <span className="text-primary">moo</span>
             </h1>
-            <div className="text-2xl">
-              🐮 🥛 🍄 🌸 🌿 🧺
-            </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
+            <div className="text-muted-foreground text-sm">
               Room: {roomCode}
             </div>
           </div>
@@ -594,7 +614,7 @@ export default function GamePage() {
                       </Badge>
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           Game will start when both players are ready
                         </span>
                       </div>
@@ -611,7 +631,10 @@ export default function GamePage() {
                   />
                   <Button
                     onClick={handleSetCode}
-                    disabled={!selectedCode.every(emoji => emoji !== "") || setPlayerCode.isPending}
+                    disabled={
+                      !selectedCode.every((emoji) => emoji !== "") ||
+                      setPlayerCode.isPending
+                    }
                     className="w-full"
                     size="lg"
                   >
@@ -622,7 +645,8 @@ export default function GamePage() {
             </div>
           )}
 
-          {(gameState.game.status === "playing" || gameState.game.status === "finished") && (
+          {(gameState.game.status === "playing" ||
+            gameState.game.status === "finished") && (
             <div className="w-full max-w-4xl">
               {gameState.game.status === "finished" ? (
                 // Game finished - show results with game history
@@ -631,11 +655,15 @@ export default function GamePage() {
                   <Card className="w-full">
                     <CardContent className="space-y-4 pt-6">
                       <div className="text-center">
-                        <div className={`text-3xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
+                        <div
+                          className={`text-3xl font-bold ${isWinner() ? "text-amber-700" : "text-slate-600"}`}
+                        >
                           {isWinner() ? "You Won!" : "You Lost"}
                         </div>
-                        <p className="text-muted-foreground text-sm mt-2">
-                          {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
+                        <p className="text-muted-foreground mt-2 text-sm">
+                          {isWinner()
+                            ? "You cracked your opponent's code first!"
+                            : "Your opponent cracked your code first!"}
                         </p>
                       </div>
 
@@ -687,11 +715,16 @@ export default function GamePage() {
                             />
                             <Button
                               onClick={handleMakeGuess}
-                              disabled={!guess.every(emoji => emoji !== "") || makeGuess.isPending}
+                              disabled={
+                                !guess.every((emoji) => emoji !== "") ||
+                                makeGuess.isPending
+                              }
                               className="w-full"
                               size="lg"
                             >
-                              {makeGuess.isPending ? "Making Guess..." : "Submit Guess"}
+                              {makeGuess.isPending
+                                ? "Making Guess..."
+                                : "Submit Guess"}
                             </Button>
                           </>
                         ) : (
@@ -699,12 +732,9 @@ export default function GamePage() {
                             <Badge variant="secondary" className="mb-4">
                               Guess Made ✓
                             </Badge>
-                            <p className="text-muted-foreground text-sm">
-                              Waiting for opponent to make their guess...
-                            </p>
-                            <div className="flex items-center justify-center gap-2 mt-4">
+                            <div className="mt-4 flex items-center justify-center gap-2">
                               <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-muted-foreground text-sm">
                                 Round will advance when both players guess
                               </span>
                             </div>

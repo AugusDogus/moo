@@ -10,10 +10,10 @@ interface SignInWithRedirectProps {
   className?: string;
 }
 
-export function SignInWithRedirect({ 
-  redirectUrl, 
+export function SignInWithRedirect({
+  redirectUrl,
   children,
-  className = "w-full"
+  className = "w-full",
 }: SignInWithRedirectProps) {
   const handleSignIn = async () => {
     try {
@@ -21,7 +21,7 @@ export function SignInWithRedirect({
       if (redirectUrl) {
         sessionStorage.setItem("authRedirectUrl", redirectUrl);
       }
-      
+
       await authClient.signIn.social({
         provider: "discord",
       });
