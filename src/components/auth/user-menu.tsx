@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { signOut } from "~/lib/auth/client";
 
@@ -30,7 +31,7 @@ export function UserMenu({ user }: UserMenuProps) {
       </div>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" asChild>
-          <a href="/account">Account Settings</a>
+          <Link href="/account">Account Settings</Link>
         </Button>
         <Button variant="outline" size="sm" onClick={signOut}>
           Sign Out
