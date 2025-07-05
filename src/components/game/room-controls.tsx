@@ -14,7 +14,7 @@ export function CreateRoomCard() {
   
   const createRoom = api.game.createRoom.useMutation({
     onSuccess: (data) => {
-      router.push(`/game/room/${data.code}`);
+      router.push(`/game/${data.code}`);
     },
     onError: (error: unknown) => {
       console.error("Failed to create room:", error);
@@ -62,15 +62,9 @@ export function JoinRoomCard() {
   const [isJoining, setIsJoining] = useState(false);
   
   const joinRoom = api.game.joinRoom.useMutation({
-    onSuccess: (data: { gameId: string | null; roomId: string; isCreator: boolean }) => {
-      if (data.gameId) {
-        // There's an active game, go to it
-        router.push(`/game/${roomCode}`);
-      } else {
-        // No active game, go to room waiting page
-        // Extract room code from the roomCode state since we have it
-        router.push(`/game/room/${roomCode}`);
-      }
+    onSuccess: () => {
+      // Always go to the main game page, let it handle the state
+      router.push(`/game/${roomCode}`);
     },
     onError: (error: unknown) => {
       console.error("Failed to join room:", error);
