@@ -39,7 +39,7 @@ Moo is a multiplayer digital deduction puzzle game where players crack four-emoj
 
 ### Database Schema
 - **Users**: Authentication and user data
-- **Game Rooms**: 4-letter codes for joining games
+- **Game Rooms**: 4-letter codes for joining games, with activity tracking for cleanup
 - **Games**: Game state, player assignments, codes, and status
 - **Game Moves**: Individual guesses with bulls/cows feedback
 
@@ -246,5 +246,12 @@ const calculateBullsAndCows = (guess: string, secret: string) => {
 - **🎨 Visual Role Indicators**: Color-coded cards showing user's relationship to the room
 - **🔄 Smart State Management**: Proper handling of session/room data race conditions
 - **✅ Error Prevention**: Multiple layers of validation to prevent invalid actions
+
+### Automatic Room Management
+- **🧹 Auto-cleanup**: Empty rooms are automatically deleted after 5 minutes of inactivity
+- **⏰ Activity Tracking**: Rooms track when they become empty vs active
+- **🔄 Periodic Cleanup**: Background service runs every 2 minutes to clean up old rooms
+- **🛡️ Safety Checks**: Multiple validation layers before room deletion
+- **🚀 Performance**: Prevents database bloat from abandoned rooms
 
 This implementation provides a robust foundation for a multiplayer deduction puzzle game with modern web technologies, seamless sharing capabilities, and a delightful cottage-core aesthetic.

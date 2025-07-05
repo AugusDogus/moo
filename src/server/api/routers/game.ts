@@ -11,9 +11,13 @@ import {
 } from "~/server/api/trpc";
 import { gameRooms, games, gameMoves } from "~/server/db/schema";
 import { generateRoomCode, calculateBullsAndCows, isWinningGuess, isValidCode } from "~/lib/game-utils";
+import { markRoomAsActive, markRoomAsEmpty, startRoomCleanupService, cleanupEmptyRooms } from "~/server/room-cleanup";
 
 // Event emitter for real-time game updates
 const gameEvents = new EventEmitter();
+
+// Start the room cleanup service
+startRoomCleanupService();
 
 // Types for game events
 interface GameUpdateEvent {
@@ -58,6 +62,7 @@ export const gameRouter = createTRPCRouter({
         code: roomCode,
         createdBy: userId,
         status: "waiting",
+        emptyAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Set to future date so it won't be cleaned up immediately
       });
       
       // Emit room created event
@@ -92,6 +97,9 @@ export const gameRouter = createTRPCRouter({
       
       // If user is the room creator, just return them to their room
       if (room.createdBy === userId) {
+        // Mark room as active since creator is returning
+        await markRoomAsActive(room.id);
+        
         // Check if there's already a game in this room
         const existingGame = await ctx.db.query.games.findFirst({
           where: eq(games.roomId, room.id),
@@ -134,10 +142,12 @@ export const gameRouter = createTRPCRouter({
         status: "code_selection",
       });
       
-      // Update room status
+      // Update room status and mark as active (2 players now)
       await ctx.db.update(gameRooms)
         .set({ status: "playing" })
         .where(eq(gameRooms.id, room.id));
+      
+      await markRoomAsActive(room.id);
       
       // Emit game started event
       gameEvents.emit("game_update", {
@@ -362,10 +372,12 @@ export const gameRouter = createTRPCRouter({
           })
           .where(eq(games.id, input.gameId));
         
-        // Update room status
+        // Update room status and mark as empty (game finished)
         await ctx.db.update(gameRooms)
           .set({ status: "finished" })
           .where(eq(gameRooms.id, game.roomId));
+        
+        await markRoomAsEmpty(game.roomId);
         
         // Emit game finished event
         gameEvents.emit("game_update", {
@@ -522,5 +534,12 @@ export const gameRouter = createTRPCRouter({
         gameId: null,
         gameStatus: null,
       };
+    }),
+
+  // Manual cleanup endpoint (for testing/debugging)
+  cleanupRooms: protectedProcedure
+    .mutation(async () => {
+      const result = await cleanupEmptyRooms();
+      return result;
     }),
 });
