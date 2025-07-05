@@ -13,11 +13,19 @@ import { gameRooms, games, gameMoves } from "~/server/db/schema";
 import { generateRoomCode, calculateBullsAndCows, isWinningGuess, isValidCode } from "~/lib/game-utils";
 import { markRoomAsActive, markRoomAsEmpty, startRoomCleanupService, cleanupEmptyRooms } from "~/server/room-cleanup";
 
+// Global type declaration
+declare global {
+  var roomCleanupStarted: boolean | undefined;
+}
+
 // Event emitter for real-time game updates
 const gameEvents = new EventEmitter();
 
-// Start the room cleanup service
-startRoomCleanupService();
+// Start the room cleanup service only once
+if (process.env.NODE_ENV === "production" || !globalThis.roomCleanupStarted) {
+  startRoomCleanupService();
+  globalThis.roomCleanupStarted = true;
+}
 
 // Types for game events
 interface GameUpdateEvent {
@@ -170,9 +178,6 @@ export const gameRouter = createTRPCRouter({
       
       const game = await ctx.db.query.games.findFirst({
         where: eq(games.id, input.gameId),
-        with: {
-          room: true,
-        },
       });
       
       if (!game) {
@@ -465,9 +470,6 @@ export const gameRouter = createTRPCRouter({
           eq(games.player1Id, userId),
           eq(games.player2Id, userId)
         ),
-        with: {
-          room: true,
-        },
         orderBy: (games, { desc }) => [desc(games.updatedAt)],
       });
       
