@@ -612,54 +612,59 @@ export default function GamePage() {
           )}
 
           {(gameState.game.status === "playing" || gameState.game.status === "finished") && (
-            <div className="w-full max-w-6xl">
-              <div className="grid gap-8 lg:grid-cols-2">
-                {/* Your game board */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-center">Your Guesses</h2>
+            <div className="w-full max-w-4xl">
+              {gameState.game.status === "finished" ? (
+                // Game finished - show results with game history
+                <div className="space-y-6">
+                  {/* Win/Lose status */}
+                  <Card className="w-full">
+                    <CardHeader>
+                      <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                        <Trophy className="h-5 w-5" />
+                        Game Over
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-center">
+                        <div className={`text-2xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
+                          {isWinner() ? "You Won!" : "You Lost"}
+                        </div>
+                        <p className="text-muted-foreground text-sm mt-2">
+                          {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => router.push("/")}
+                          className="flex-1"
+                        >
+                          New Game
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Game history */}
                   <GameBoard
                     moves={gameState.moves}
                     playerId={gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id}
-                    playerName="You"
+                    isCurrentPlayer={true}
+                    showTitle={false}
+                  />
+                </div>
+              ) : (
+                // Game in progress - show guessing interface
+                <div className="grid gap-8 lg:grid-cols-2">
+                  {/* Your guesses */}
+                  <GameBoard
+                    moves={gameState.moves}
+                    playerId={gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id}
                     isCurrentPlayer={true}
                   />
 
-                  {/* Win/Lose display - right next to the game board */}
-                  {gameState.game.status === "finished" && (
-                    <Card className="w-full">
-                      <CardHeader>
-                        <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
-                          <Trophy className="h-5 w-5" />
-                          Game Over
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="text-center">
-                          <div className={`text-2xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
-                            {isWinner() ? "You Won!" : "You Lost"}
-                          </div>
-                          <p className="text-muted-foreground text-sm mt-2">
-                            {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => router.push("/")}
-                            className="flex-1"
-                          >
-                            New Game
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-
-                {/* Guess input - only show if game is still playing */}
-                {gameState.game.status === "playing" && (
+                  {/* Guess input */}
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-center">Make Your Guess</h2>
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-center text-lg">
@@ -703,8 +708,8 @@ export default function GamePage() {
                       </CardContent>
                     </Card>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </div>
