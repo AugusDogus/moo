@@ -1,6 +1,6 @@
+import { and, eq, lt } from "drizzle-orm";
 import { db } from "~/server/db";
 import { gameRooms, games } from "~/server/db/schema";
-import { lt, eq, and } from "drizzle-orm";
 
 // Clean up empty rooms that have been empty for more than 5 minutes
 export async function cleanupEmptyRooms() {
@@ -22,6 +22,7 @@ export async function cleanupEmptyRooms() {
     console.log(`Found ${emptyRooms.length} empty rooms to clean up`);
 
     // Delete the empty rooms
+    let actuallyDeleted = 0;
     for (const room of emptyRooms) {
       // Double-check there are no active games in this room before deletion
       const activeGame = await db.query.games.findFirst({
@@ -31,12 +32,13 @@ export async function cleanupEmptyRooms() {
       if (!activeGame) {
         await db.delete(gameRooms).where(eq(gameRooms.id, room.id));
         console.log(`Cleaned up empty room: ${room.code}`);
+        actuallyDeleted++;
       } else {
         console.log(`Skipping room ${room.code} - has active game`);
       }
     }
 
-    return { cleaned: emptyRooms.length };
+    return { cleaned: actuallyDeleted };
   } catch (error) {
     console.error("Error during room cleanup:", error);
     return { cleaned: 0, error };
