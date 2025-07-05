@@ -17,3 +17,13 @@ export const signOut = async () => {
     },
   });
 };
+
+export const deleteUser = async () => {
+  await authClient.deleteUser({
+    fetchOptions: {
+      onSuccess: () => {
+        window.location.href = "/";
+      },
+    },
+  });
+};
