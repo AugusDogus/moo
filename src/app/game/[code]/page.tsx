@@ -1,29 +1,58 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Loader2, Trophy, Target } from "lucide-react";
+import { Loader2, Trophy, Copy, Check, LogIn } from "lucide-react";
 import { EmojiPicker } from "~/components/game/emoji-picker";
 import { GameBoard } from "~/components/game/game-board";
 import { emojisToCode } from "~/lib/game-utils";
+import { SignInWithRedirect } from "~/components/auth/sign-in-with-redirect";
+import { authClient } from "~/lib/auth/client";
 
-export default function GamePlayPage() {
+export default function GamePage() {
   const params = useParams();
   const router = useRouter();
   const roomCode = params.code as string;
+  const [copied, setCopied] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   
   const [selectedCode, setSelectedCode] = useState<string[]>(["", "", "", ""]);
   const [guess, setGuess] = useState<string[]>(["", "", "", ""]);
-  const [gamePhase, setGamePhase] = useState<"loading" | "code_selection" | "playing" | "finished">("loading");
 
-  const { data: gameState, isLoading, error, refetch } = api.game.getGameStateByCode.useQuery(
+  // Get current session
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
+
+  // Get room info (public endpoint)
+  const { data: roomInfo, isLoading: roomLoading, error: roomError } = api.game.getRoomInfo.useQuery(
     { code: roomCode },
     { enabled: !!roomCode }
   );
+
+  // Get user's role in this room if authenticated
+  const { data: userRole } = api.game.getUserRoomRole.useQuery(
+    { code: roomCode },
+    { enabled: !!roomCode && !!session?.user }
+  );
+
+  // Get game state if user is a player
+  const { data: gameState, isLoading: gameLoading, error: gameError, refetch } = api.game.getGameStateByCode.useQuery(
+    { code: roomCode },
+    { enabled: !!roomCode && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player") }
+  );
+
+  const joinRoom = api.game.joinRoom.useMutation({
+    onSuccess: () => {
+      window.location.reload();
+    },
+    onError: (error: unknown) => {
+      console.error("Failed to join room:", error);
+      setIsJoining(false);
+    },
+  });
 
   const setPlayerCode = api.game.setPlayerCodeByCode.useMutation({
     onSuccess: () => {
@@ -32,40 +61,44 @@ export default function GamePlayPage() {
   });
 
   const makeGuess = api.game.makeGuessByCode.useMutation({
-    onSuccess: (result: { isWin: boolean; bulls: number; cows: number }) => {
-      if (result.isWin) {
-        setGamePhase("finished");
-      }
+    onSuccess: () => {
       setGuess(["", "", "", ""]);
       void refetch();
     },
   });
 
-  // Subscribe to game updates - only if game is not finished
+  // Subscribe to game updates - only if user is part of the game
   api.game.subscribeToGameUpdates.useSubscription(
-    { roomId: gameState?.game.roomId ?? "" },
+    { roomId: roomInfo?.id ?? "" },
     {
-      enabled: !!gameState?.game.roomId && gameState.game.status !== "finished",
-      onData: (event: unknown) => {
-        if (event && typeof event === "object") {
-          void refetch();
-        }
+      enabled: !!roomInfo?.id && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
+      onData: () => {
+        void refetch();
       },
     }
   );
 
-  // Update game phase based on game state
-  useEffect(() => {
-    if (gameState?.game) {
-      if (gameState.game.status === "finished") {
-        setGamePhase("finished");
-      } else if (gameState.game.status === "playing") {
-        setGamePhase("playing");
-      } else if (gameState.game.status === "code_selection") {
-        setGamePhase("code_selection");
-      }
+  const copyRoomCode = async () => {
+    try {
+      await navigator.clipboard.writeText(roomCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy room code:", err);
     }
-  }, [gameState]);
+  };
+
+  const handleJoinRoom = async () => {
+    if (!session?.user || !userRole) return;
+    
+    if (userRole.role !== "visitor") {
+      console.error("User is not a visitor to this room");
+      return;
+    }
+    
+    setIsJoining(true);
+    joinRoom.mutate({ code: roomCode });
+  };
 
   const handleSetCode = () => {
     if (selectedCode.every(emoji => emoji !== "")) {
@@ -87,8 +120,7 @@ export default function GamePlayPage() {
   };
 
   const canMakeGuess = () => {
-    if (gamePhase !== "playing") return false;
-    if (!gameState) return false;
+    if (!gameState || gameState.game.status !== "playing") return false;
     
     // Check if player has already made a guess this round
     const currentRound = gameState.game.currentRound;
@@ -99,12 +131,252 @@ export default function GamePlayPage() {
   };
 
   const isWinner = () => {
-    if (!gameState?.game || gameState.game.status !== "finished") return false;
+    if (!gameState?.game || gameState.game.status !== "finished") return null;
     const currentUserId = gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id;
     return gameState.game.winnerId === currentUserId;
   };
 
-  if (isLoading) {
+  if (roomLoading || sessionLoading || (session?.user && !userRole)) {
+    return (
+      <main className="bg-background min-h-screen">
+        <div className="container mx-auto px-4 py-16">
+          <div className="flex flex-col items-center justify-center gap-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (roomError) {
+    return (
+      <main className="bg-background min-h-screen">
+        <div className="container mx-auto px-4 py-16">
+          <div className="flex flex-col items-center justify-center gap-8">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="text-center text-lg text-destructive">
+                  Room Not Found
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-center text-muted-foreground">
+                  The room code &quot;{roomCode}&quot; doesn&apos;t exist or has expired.
+                </p>
+                <Button
+                  onClick={() => router.push("/")}
+                  className="w-full"
+                >
+                  Back to Home
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // If user is not authenticated, show sign in
+  if (!session?.user) {
+    return (
+      <main className="bg-background min-h-screen">
+        <div className="container mx-auto px-4 py-16">
+          <div className="flex flex-col items-center justify-center gap-8">
+            <div className="space-y-4 text-center">
+              <h1 className="text-foreground text-4xl font-bold tracking-tight">
+                <span className="text-primary">moo</span>
+              </h1>
+              <div className="text-2xl">
+                🐮 🥛 🍄 🌸 🌿 🧺
+              </div>
+            </div>
+
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                  Room {roomCode}
+                  <Badge variant={roomInfo?.status === "waiting" ? "secondary" : "default"}>
+                    {roomInfo?.status}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-center">
+                  <p className="text-muted-foreground text-sm">
+                    Sign in to join this game room
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Room code:
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+                      {roomCode}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyRoomCode}
+                      className="flex items-center gap-2"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-4">
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <LogIn className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Sign in to join this moo game room and start playing!
+                    </p>
+                    <SignInWithRedirect 
+                      redirectUrl={`/game/${roomCode}`}
+                    >
+                      Sign in to join game
+                    </SignInWithRedirect>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/")}
+                    className="flex-1"
+                  >
+                    Back to Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // If user is a visitor, show join option
+  if (userRole?.role === "visitor") {
+    return (
+      <main className="bg-background min-h-screen">
+        <div className="container mx-auto px-4 py-16">
+          <div className="flex flex-col items-center justify-center gap-8">
+            <div className="space-y-4 text-center">
+              <h1 className="text-foreground text-4xl font-bold tracking-tight">
+                <span className="text-primary">moo</span>
+              </h1>
+              <div className="text-2xl">
+                🐮 🥛 🍄 🌸 🌿 🧺
+              </div>
+            </div>
+
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                  Room {roomCode}
+                  <Badge variant={roomInfo?.status === "waiting" ? "secondary" : "default"}>
+                    {roomInfo?.status}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-lg font-semibold">
+                      1/2 players
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Ready to join this game!
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Room code:
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+                      {roomCode}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyRoomCode}
+                      className="flex items-center gap-2"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <Button
+                    onClick={handleJoinRoom}
+                    disabled={isJoining || joinRoom.isPending}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isJoining || joinRoom.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Joining Game...
+                      </>
+                    ) : (
+                      "Join Game"
+                    )}
+                  </Button>
+                  
+                  {joinRoom.error && (
+                    <p className="text-sm text-destructive mt-2">
+                      Failed to join room. Please try again.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/")}
+                    className="flex-1"
+                  >
+                    Back to Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // User is creator or player - show game interface
+  if (gameLoading) {
     return (
       <main className="bg-background min-h-screen">
         <div className="container mx-auto px-4 py-16">
@@ -117,7 +389,109 @@ export default function GamePlayPage() {
     );
   }
 
-  if (error || !gameState) {
+  if (gameError || !gameState) {
+    // If there's no game yet and user is creator, show waiting state
+    if (userRole?.role === "creator" && !gameState) {
+      return (
+        <main className="bg-background min-h-screen">
+          <div className="container mx-auto px-4 py-16">
+            <div className="flex flex-col items-center justify-center gap-8">
+              <div className="space-y-4 text-center">
+                <h1 className="text-foreground text-4xl font-bold tracking-tight">
+                  <span className="text-primary">moo</span>
+                </h1>
+                <div className="text-2xl">
+                  🐮 🥛 🍄 🌸 🌿 🧺
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Room: {roomCode}
+                </div>
+              </div>
+
+              <Card className="w-full max-w-md">
+                <CardHeader>
+                  <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                    Room {roomCode}
+                    <Badge variant="secondary">waiting</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-lg font-semibold">
+                        1/2 players
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                      Created by {session.user.name}
+                    </p>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Room code:
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="bg-muted px-4 py-2 rounded font-mono text-lg tracking-widest">
+                        {roomCode}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyRoomCode}
+                        className="flex items-center gap-2"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-amber-900">
+                          Your Game Room
+                        </span>
+                      </div>
+                      <p className="text-sm text-amber-700 mb-4">
+                        Share the code with a friend to start playing!
+                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-amber-700">
+                          Waiting for another player...
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push("/")}
+                      className="flex-1"
+                    >
+                      Back to Home
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="bg-background min-h-screen">
         <div className="container mx-auto px-4 py-16">
@@ -162,42 +536,11 @@ export default function GamePlayPage() {
             </div>
           </div>
 
-          {gamePhase === "finished" && (
-            <Card className="w-full max-w-md mb-6">
-              <CardHeader>
-                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Game Over
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className={`text-2xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
-                    {isWinner() ? "You Won!" : "You Lost"}
-                  </div>
-                  <p className="text-muted-foreground text-sm mt-2">
-                    {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => router.push("/")}
-                    className="flex-1"
-                  >
-                    New Game
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {gamePhase === "code_selection" && (
+          {gameState.game.status === "code_selection" && (
             <div className="w-full max-w-md">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
-                    <Target className="h-5 w-5" />
+                  <CardTitle className="text-center text-lg">
                     {hasPlayerSetCode() ? "Waiting for opponent..." : "Set Your Secret Code"}
                   </CardTitle>
                 </CardHeader>
@@ -240,7 +583,7 @@ export default function GamePlayPage() {
             </div>
           )}
 
-          {(gamePhase === "playing" || gamePhase === "finished") && (
+          {(gameState.game.status === "playing" || gameState.game.status === "finished") && (
             <div className="w-full max-w-6xl">
               <div className="grid gap-8 lg:grid-cols-2">
                 {/* Your game board */}
@@ -252,10 +595,41 @@ export default function GamePlayPage() {
                     playerName="You"
                     isCurrentPlayer={true}
                   />
+
+                  {/* Win/Lose display - right next to the game board */}
+                  {gameState.game.status === "finished" && (
+                    <Card className="w-full">
+                      <CardHeader>
+                        <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                          <Trophy className="h-5 w-5" />
+                          Game Over
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="text-center">
+                          <div className={`text-2xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
+                            {isWinner() ? "You Won!" : "You Lost"}
+                          </div>
+                          <p className="text-muted-foreground text-sm mt-2">
+                            {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => router.push("/")}
+                            className="flex-1"
+                          >
+                            New Game
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 {/* Guess input - only show if game is still playing */}
-                {gamePhase === "playing" && (
+                {gameState.game.status === "playing" && (
                   <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-center">Make Your Guess</h2>
                     <Card>
