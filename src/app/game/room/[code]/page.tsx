@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -25,6 +25,12 @@ export default function GameRoomPage() {
     { enabled: !!roomCode }
   );
 
+  // Get user's role in this room if authenticated
+  const { data: userRole } = api.game.getUserRoomRole.useQuery(
+    { code: roomCode },
+    { enabled: !!roomCode && !!session?.user }
+  );
+
   const joinRoom = api.game.joinRoom.useMutation({
     onSuccess: (data: { gameId: string; roomId: string }) => {
       router.push(`/game/play/${data.gameId}`);
@@ -34,6 +40,13 @@ export default function GameRoomPage() {
       setIsJoining(false);
     },
   });
+
+  // Redirect if user already has an active game in this room
+  useEffect(() => {
+    if (userRole?.gameId && userRole.gameStatus !== "finished") {
+      router.push(`/game/play/${userRole.gameId}`);
+    }
+  }, [userRole, router]);
 
   // Subscribe to room updates
   api.game.subscribeToGameUpdates.useSubscription(
@@ -59,13 +72,19 @@ export default function GameRoomPage() {
   };
 
   const handleJoinRoom = async () => {
-    if (!session?.user) return;
+    if (!session?.user || !userRole) return;
+    
+    // Double-check we're only allowing visitors to join
+    if (userRole.role !== "visitor") {
+      console.error("User is not a visitor to this room");
+      return;
+    }
     
     setIsJoining(true);
     joinRoom.mutate({ code: roomCode });
   };
 
-  if (isLoading || sessionLoading) {
+  if (isLoading || sessionLoading || (session?.user && !userRole)) {
     return (
       <main className="bg-background min-h-screen">
         <div className="container mx-auto px-4 py-16">
@@ -141,9 +160,17 @@ export default function GameRoomPage() {
                   <p className="text-muted-foreground text-sm">
                     Sign in to join this game room
                   </p>
-                ) : session.user.id === roomInfo?.createdBy ? (
+                ) : !roomInfo || !userRole ? (
                   <p className="text-muted-foreground text-sm">
-                    Waiting for another player to join...
+                    Loading...
+                  </p>
+                ) : userRole.role === "creator" ? (
+                  <p className="text-muted-foreground text-sm">
+                    You created this room - waiting for another player...
+                  </p>
+                ) : userRole.role === "player" ? (
+                  <p className="text-muted-foreground text-sm">
+                    You&apos;re already in this game!
                   </p>
                 ) : (
                   <p className="text-muted-foreground text-sm">
@@ -196,13 +223,35 @@ export default function GameRoomPage() {
                     </SignInWithRedirect>
                   </div>
                 </div>
-              ) : session.user.id === roomInfo?.createdBy ? (
-                // Room creator - show waiting state
+              ) : !roomInfo || !userRole ? (
+                // Room info still loading - show loading state
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-2 mb-4">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-sm text-muted-foreground">
-                      Waiting for player...
+                      Loading room details...
+                    </span>
+                  </div>
+                </div>
+              ) : userRole.role === "creator" ? (
+                // Room creator - show waiting state
+                <div className="text-center">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        Your Room
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-700 mb-4">
+                      You created this room. Share the code with a friend to start playing!
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-center gap-2 mt-4 mb-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">
+                      Waiting for another player to join...
                     </span>
                   </div>
                   
@@ -210,8 +259,24 @@ export default function GameRoomPage() {
                     The game will start automatically when another player joins.
                   </p>
                 </div>
+              ) : userRole.role === "player" ? (
+                // User is already a player - show game in progress
+                <div className="text-center">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Users className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-900">
+                        You&apos;re in this game!
+                      </span>
+                    </div>
+                    <p className="text-sm text-green-700 mb-4">
+                      Redirecting you back to the game...
+                    </p>
+                    <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                  </div>
+                </div>
               ) : (
-                // Not room creator - show join option
+                // Visitor - show join option
                 <div className="text-center">
                   <Button
                     onClick={handleJoinRoom}
