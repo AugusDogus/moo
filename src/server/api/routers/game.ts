@@ -11,21 +11,15 @@ import {
 } from "~/server/api/trpc";
 import { gameRooms, games, gameMoves } from "~/server/db/schema";
 import { generateRoomCode, calculateBullsAndCows, isWinningGuess, isValidCode } from "~/lib/game-utils";
-import { markRoomAsActive, markRoomAsEmpty, startRoomCleanupService, cleanupEmptyRooms } from "~/server/room-cleanup";
+import { markRoomAsActive, markRoomAsEmpty } from "~/server/room-cleanup";
 
-// Global type declaration
-declare global {
-  var roomCleanupStarted: boolean | undefined;
-}
+
 
 // Event emitter for real-time game updates
 const gameEvents = new EventEmitter();
 
-// Start the room cleanup service only once
-if (process.env.NODE_ENV === "production" || !globalThis.roomCleanupStarted) {
-  startRoomCleanupService();
-  globalThis.roomCleanupStarted = true;
-}
+// Cleanup service disabled - was causing performance issues
+// TODO: Implement cleanup service in a separate background process
 
 // Types for game events
 interface GameUpdateEvent {
@@ -828,10 +822,5 @@ export const gameRouter = createTRPCRouter({
       };
     }),
 
-  // Manual cleanup endpoint (for testing/debugging)
-  cleanupRooms: protectedProcedure
-    .mutation(async () => {
-      const result = await cleanupEmptyRooms();
-      return result;
-    }),
+
 });
