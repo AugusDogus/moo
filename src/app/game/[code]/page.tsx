@@ -46,14 +46,16 @@ export default function GamePage() {
     }
   );
 
-  // Get game state if user is a player
+  // Get game state if user is a player or creator
   const { data: gameState, isLoading: gameLoading, error: gameError, refetch } = api.game.getGameStateByCode.useQuery(
     { code: roomCode },
     { 
       enabled: !!roomCode && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
       retry: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false
+      refetchOnReconnect: false,
+      refetchOnMount: true,
+      staleTime: 0 // Always fetch fresh data when subscription triggers refetch
     }
   );
 
@@ -80,13 +82,25 @@ export default function GamePage() {
     },
   });
 
-  // Subscribe to game updates - only if there's an active game
+  // Get tRPC utils for invalidation
+  const utils = api.useUtils();
+
+  // Subscribe to game updates - room creators need this to know when players join
   api.game.subscribeToGameUpdates.useSubscription(
     { roomId: roomInfo?.id ?? "" },
     {
-      enabled: !!roomInfo?.id && !!gameState?.game && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
-      onData: () => {
-        void refetch();
+      enabled: !!roomInfo?.id && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
+      onData: (event: unknown) => {
+        if (event && typeof event === "object" && "type" in event) {
+          if (event.type === "game_started") {
+            // Invalidate all related queries to force fresh data
+            void utils.game.getGameStateByCode.invalidate({ code: roomCode });
+            void utils.game.getUserRoomRole.invalidate({ code: roomCode });
+            void utils.game.getRoomInfo.invalidate({ code: roomCode });
+          } else if (event.type === "move_made" || event.type === "game_finished") {
+            void refetch();
+          }
+        }
       },
     }
   );
