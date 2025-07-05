@@ -7,7 +7,7 @@ a cozy cottage-core deduction game where you crack four-emoji codes with bulls a
 - **Classic Mastermind Logic**: Guess the secret four-emoji code
 - **Bulls & Cows Feedback**: Get hints about correct positions and symbols
 - **Cozy Aesthetic**: Soft cottage-core design with pastoral vibes
-- **Emoji Symbols**: 🐄 🥛 🍄 🌸 🌿 🧺 instead of colored pegs
+- **Emoji Symbols**: 🐮 🥛 🍄 🌸 🌿 🧺 instead of colored pegs
 - **Social Features**: Share scores and compete with friends
 
 ## Tech Stack
@@ -28,7 +28,8 @@ This project is built with the following technologies:
 1. Clone the repository
 2. Install dependencies: `bun install`
 3. Set up your environment variables: `cp .env.example .env`
-4. Run the development server: `bun dev`
+4. Initialize the database: `bun db:push`
+5. Run the development server: `bun dev`
 
 ## Contributing
 
