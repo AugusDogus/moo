@@ -35,7 +35,7 @@ export default function GameRoomPage() {
     onSuccess: (data: { gameId: string | null; roomId: string; isCreator: boolean }) => {
       if (data.gameId) {
         // There's an active game, go to it
-        router.push(`/game/play/${data.gameId}`);
+        router.push(`/game/play/${roomCode}`);
       } else {
         // No active game, stay on room page (it will update automatically)
         window.location.reload();
@@ -50,9 +50,9 @@ export default function GameRoomPage() {
   // Redirect if user already has an active game in this room
   useEffect(() => {
     if (userRole?.gameId && userRole.gameStatus !== "finished") {
-      router.push(`/game/play/${userRole.gameId}`);
+      router.push(`/game/play/${roomCode}`);
     }
-  }, [userRole, router]);
+  }, [userRole, router, roomCode]);
 
   // Subscribe to room updates
   api.game.subscribeToGameUpdates.useSubscription(
@@ -60,8 +60,8 @@ export default function GameRoomPage() {
     {
       enabled: !!roomInfo?.id,
       onData: (event: unknown) => {
-                 if (event && typeof event === "object" && "type" in event && event.type === "game_started" && "gameId" in event && typeof event.gameId === "string") {
-           router.push(`/game/play/${event.gameId}`);
+                 if (event && typeof event === "object" && "type" in event && event.type === "game_started") {
+           router.push(`/game/play/${roomCode}`);
          }
       },
     }
@@ -242,13 +242,12 @@ export default function GameRoomPage() {
               ) : userRole.role === "creator" ? (
                 // Room creator - show waiting state
                 <div className="text-center">
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Users className="h-5 w-5 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-900">
-                        Your Room
-                      </span>
-                    </div>
+                                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                     <div className="flex items-center justify-center gap-2 mb-2">
+                       <span className="text-sm font-medium text-blue-900">
+                         Your Room
+                       </span>
+                     </div>
                     <p className="text-sm text-blue-700 mb-4">
                       You created this room. Share the code with a friend to start playing!
                     </p>
@@ -270,7 +269,6 @@ export default function GameRoomPage() {
                 <div className="text-center">
                   <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <Users className="h-5 w-5 text-green-600" />
                       <span className="text-sm font-medium text-green-900">
                         You&apos;re in this game!
                       </span>

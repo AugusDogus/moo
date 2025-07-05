@@ -168,7 +168,61 @@ export const gameRouter = createTRPCRouter({
       return { gameId, roomId: room.id, isCreator: false };
     }),
 
-  // Get game state
+  // Get game state by room code
+  getGameStateByCode: protectedProcedure
+    .input(z.object({
+      code: z.string().length(4),
+    }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.authSession.user.id;
+      
+      // Find the room
+      const room = await ctx.db.query.gameRooms.findFirst({
+        where: eq(gameRooms.code, input.code.toUpperCase()),
+      });
+      
+      if (!room) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Room not found",
+        });
+      }
+      
+      // Find the game in this room
+      const game = await ctx.db.query.games.findFirst({
+        where: eq(games.roomId, room.id),
+      });
+      
+      if (!game) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No game found in this room",
+        });
+      }
+      
+      // Check if user is a player in this game
+      if (game.player1Id !== userId && game.player2Id !== userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a player in this game",
+        });
+      }
+      
+      // Get game moves
+      const moves = await ctx.db.query.gameMoves.findMany({
+        where: eq(gameMoves.gameId, game.id),
+        orderBy: (gameMoves, { asc }) => [asc(gameMoves.round), asc(gameMoves.createdAt)],
+      });
+      
+      return {
+        game,
+        moves,
+        isPlayer1: game.player1Id === userId,
+        isPlayer2: game.player2Id === userId,
+      };
+    }),
+
+  // Get game state (legacy endpoint for backward compatibility)
   getGameState: protectedProcedure
     .input(z.object({
       gameId: z.string(),
@@ -209,7 +263,93 @@ export const gameRouter = createTRPCRouter({
       };
     }),
 
-  // Set player's secret code
+  // Set player's secret code by room code
+  setPlayerCodeByCode: protectedProcedure
+    .input(z.object({
+      roomCode: z.string().length(4),
+      code: z.string().length(4),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.authSession.user.id;
+      
+      if (!isValidCode(input.code)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid code format",
+        });
+      }
+      
+      // Find the room
+      const room = await ctx.db.query.gameRooms.findFirst({
+        where: eq(gameRooms.code, input.roomCode.toUpperCase()),
+      });
+      
+      if (!room) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Room not found",
+        });
+      }
+      
+      // Find the game in this room
+      const game = await ctx.db.query.games.findFirst({
+        where: eq(games.roomId, room.id),
+      });
+      
+      if (!game) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No game found in this room",
+        });
+      }
+      
+      if (game.status !== "code_selection") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Game is not in code selection phase",
+        });
+      }
+      
+      // Update the appropriate player's code
+      if (game.player1Id === userId) {
+        await ctx.db.update(games)
+          .set({ player1Code: input.code })
+          .where(eq(games.id, game.id));
+      } else if (game.player2Id === userId) {
+        await ctx.db.update(games)
+          .set({ player2Code: input.code })
+          .where(eq(games.id, game.id));
+      } else {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a player in this game",
+        });
+      }
+      
+      // Check if both players have set their codes
+      const updatedGame = await ctx.db.query.games.findFirst({
+        where: eq(games.id, game.id),
+      });
+      
+             if (updatedGame?.player1Code && updatedGame.player2Code) {
+        // Both players have set codes, start the game
+        await ctx.db.update(games)
+          .set({ status: "playing" })
+          .where(eq(games.id, game.id));
+        
+        // Emit game update
+        gameEvents.emit("game_update", {
+          roomId: game.roomId,
+          gameId: game.id,
+          type: "game_started",
+          data: { status: "playing" },
+        } as GameUpdateEvent);
+      }
+      
+      return { success: true };
+    }),
+
+  // Set player's secret code (legacy endpoint for backward compatibility)
   setPlayerCode: protectedProcedure
     .input(z.object({
       gameId: z.string(),
@@ -282,7 +422,157 @@ export const gameRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Make a guess
+  // Make a guess by room code
+  makeGuessByCode: protectedProcedure
+    .input(z.object({
+      roomCode: z.string().length(4),
+      guess: z.string().length(4),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.authSession.user.id;
+      
+      if (!isValidCode(input.guess)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid guess format",
+        });
+      }
+      
+      // Find the room
+      const room = await ctx.db.query.gameRooms.findFirst({
+        where: eq(gameRooms.code, input.roomCode.toUpperCase()),
+      });
+      
+      if (!room) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Room not found",
+        });
+      }
+      
+      // Find the game in this room
+      const game = await ctx.db.query.games.findFirst({
+        where: eq(games.roomId, room.id),
+      });
+      
+      if (!game) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No game found in this room",
+        });
+      }
+      
+      if (game.status !== "playing") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Game is not in playing state",
+        });
+      }
+      
+      if (!game.player1Code || !game.player2Code) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Players have not set their codes yet",
+        });
+      }
+      
+      // Determine which player is guessing and what their target code is
+      let targetCode: string;
+      if (game.player1Id === userId) {
+        targetCode = game.player2Code;
+      } else if (game.player2Id === userId) {
+        targetCode = game.player1Code;
+      } else {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a player in this game",
+        });
+      }
+      
+      // Check if player has already made a guess this round
+      const existingMove = await ctx.db.query.gameMoves.findFirst({
+        where: and(
+          eq(gameMoves.gameId, game.id),
+          eq(gameMoves.playerId, userId),
+          eq(gameMoves.round, game.currentRound)
+        ),
+      });
+      
+      if (existingMove) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You have already made a guess this round",
+        });
+      }
+      
+      // Calculate bulls and cows
+      const { bulls, cows } = calculateBullsAndCows(input.guess, targetCode);
+      
+      // Save the move
+      const moveId = crypto.randomUUID();
+      await ctx.db.insert(gameMoves).values({
+        id: moveId,
+        gameId: game.id,
+        playerId: userId,
+        round: game.currentRound,
+        guess: input.guess,
+        bulls,
+        cows,
+      });
+      
+      // Check if this is a winning guess
+      if (isWinningGuess(bulls)) {
+        // Player wins!
+        await ctx.db.update(games)
+          .set({ 
+            winnerId: userId,
+            status: "finished"
+          })
+          .where(eq(games.id, game.id));
+        
+        // Update room status and mark as empty (game finished)
+        await ctx.db.update(gameRooms)
+          .set({ status: "finished" })
+          .where(eq(gameRooms.id, game.roomId));
+        
+        await markRoomAsEmpty(game.roomId);
+        
+        // Emit game finished event
+        gameEvents.emit("game_update", {
+          roomId: game.roomId,
+          gameId: game.id,
+          type: "game_finished",
+          data: { winnerId: userId, bulls, cows },
+        } as GameUpdateEvent);
+      } else {
+        // Check if both players have made their guesses for this round
+        const roundMoves = await ctx.db.query.gameMoves.findMany({
+          where: and(
+            eq(gameMoves.gameId, game.id),
+            eq(gameMoves.round, game.currentRound)
+          ),
+        });
+        
+        if (roundMoves.length >= 2) {
+          // Both players have guessed, increment round
+          await ctx.db.update(games)
+            .set({ currentRound: game.currentRound + 1 })
+            .where(eq(games.id, game.id));
+        }
+        
+        // Emit move made event
+        gameEvents.emit("game_update", {
+          roomId: game.roomId,
+          gameId: game.id,
+          type: "move_made",
+          data: { playerId: userId, round: game.currentRound, bulls, cows },
+        } as GameUpdateEvent);
+      }
+      
+      return { bulls, cows, isWin: isWinningGuess(bulls) };
+    }),
+
+  // Make a guess (legacy endpoint for backward compatibility)
   makeGuess: protectedProcedure
     .input(z.object({
       gameId: z.string(),
