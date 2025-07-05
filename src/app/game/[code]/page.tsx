@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Loader2, Trophy, Copy, Check, LogIn } from "lucide-react";
+import { Loader2, Copy, Check, LogIn } from "lucide-react";
 import { EmojiPicker } from "~/components/game/emoji-picker";
 import { GameBoard } from "~/components/game/game-board";
 import { emojisToCode } from "~/lib/game-utils";
@@ -580,48 +580,45 @@ export default function GamePage() {
 
           {gameState.game.status === "code_selection" && (
             <div className="w-full max-w-md">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-center text-lg">
-                    {hasPlayerSetCode() ? "Waiting for opponent..." : "Set Your Secret Code"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {hasPlayerSetCode() ? (
+              {hasPlayerSetCode() ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-center text-lg">
+                      Waiting for opponent...
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="text-center">
                       <Badge variant="secondary" className="mb-4">
                         Code Set ✓
                       </Badge>
-                      <p className="text-muted-foreground text-sm">
-                        Waiting for your opponent to set their code...
-                      </p>
-                      <div className="flex items-center justify-center gap-2 mt-4">
+                      <div className="flex items-center justify-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm text-muted-foreground">
                           Game will start when both players are ready
                         </span>
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <EmojiPicker
-                        selectedCode={selectedCode}
-                        onCodeChange={setSelectedCode}
-                        title="Choose your secret code"
-                        disabled={setPlayerCode.isPending}
-                      />
-                      <Button
-                        onClick={handleSetCode}
-                        disabled={!selectedCode.every(emoji => emoji !== "") || setPlayerCode.isPending}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {setPlayerCode.isPending ? "Setting Code..." : "Set Code"}
-                      </Button>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  <EmojiPicker
+                    selectedCode={selectedCode}
+                    onCodeChange={setSelectedCode}
+                    title="Choose your secret code"
+                    disabled={setPlayerCode.isPending}
+                  />
+                  <Button
+                    onClick={handleSetCode}
+                    disabled={!selectedCode.every(emoji => emoji !== "") || setPlayerCode.isPending}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {setPlayerCode.isPending ? "Setting Code..." : "Set Code"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -632,15 +629,9 @@ export default function GamePage() {
                 <div className="space-y-6">
                   {/* Win/Lose status */}
                   <Card className="w-full">
-                    <CardHeader>
-                      <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
-                        <Trophy className="h-5 w-5" />
-                        Game Over
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pt-6">
                       <div className="text-center">
-                        <div className={`text-2xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
+                        <div className={`text-3xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
                           {isWinner() ? "You Won!" : "You Lost"}
                         </div>
                         <p className="text-muted-foreground text-sm mt-2">
