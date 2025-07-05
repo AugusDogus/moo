@@ -29,19 +29,32 @@ export default function GamePage() {
   // Get room info (public endpoint)
   const { data: roomInfo, isLoading: roomLoading, error: roomError } = api.game.getRoomInfo.useQuery(
     { code: roomCode },
-    { enabled: !!roomCode }
+    { 
+      enabled: !!roomCode,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false
+    }
   );
 
   // Get user's role in this room if authenticated
   const { data: userRole } = api.game.getUserRoomRole.useQuery(
     { code: roomCode },
-    { enabled: !!roomCode && !!session?.user }
+    { 
+      enabled: !!roomCode && !!session?.user,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false
+    }
   );
 
   // Get game state if user is a player
   const { data: gameState, isLoading: gameLoading, error: gameError, refetch } = api.game.getGameStateByCode.useQuery(
     { code: roomCode },
-    { enabled: !!roomCode && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player") }
+    { 
+      enabled: !!roomCode && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false
+    }
   );
 
   const joinRoom = api.game.joinRoom.useMutation({
@@ -67,11 +80,11 @@ export default function GamePage() {
     },
   });
 
-  // Subscribe to game updates - only if user is part of the game
+  // Subscribe to game updates - only if there's an active game
   api.game.subscribeToGameUpdates.useSubscription(
     { roomId: roomInfo?.id ?? "" },
     {
-      enabled: !!roomInfo?.id && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
+      enabled: !!roomInfo?.id && !!gameState?.game && !!session?.user && (userRole?.role === "creator" || userRole?.role === "player"),
       onData: () => {
         void refetch();
       },
@@ -389,9 +402,9 @@ export default function GamePage() {
     );
   }
 
-  if (gameError || !gameState) {
+  if (!gameState) {
     // If there's no game yet and user is creator, show waiting state
-    if (userRole?.role === "creator" && !gameState) {
+    if (userRole?.role === "creator") {
       return (
         <main className="bg-background min-h-screen">
           <div className="container mx-auto px-4 py-16">
@@ -492,28 +505,43 @@ export default function GamePage() {
       );
     }
 
+    // If there's a game error and user is a player, show error
+    if (gameError && userRole?.role === "player") {
+      return (
+        <main className="bg-background min-h-screen">
+          <div className="container mx-auto px-4 py-16">
+            <div className="flex flex-col items-center justify-center gap-8">
+              <Card className="w-full max-w-md">
+                <CardHeader>
+                  <CardTitle className="text-center text-lg text-destructive">
+                    Game Not Found
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-center text-muted-foreground">
+                    This game doesn&apos;t exist or you don&apos;t have access to it.
+                  </p>
+                  <Button
+                    onClick={() => router.push("/")}
+                    className="w-full"
+                  >
+                    Back to Home
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // If we get here, something unexpected happened - just show loading
     return (
       <main className="bg-background min-h-screen">
         <div className="container mx-auto px-4 py-16">
           <div className="flex flex-col items-center justify-center gap-8">
-            <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle className="text-center text-lg text-destructive">
-                  Game Not Found
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-center text-muted-foreground">
-                  This game doesn&apos;t exist or you don&apos;t have access to it.
-                </p>
-                <Button
-                  onClick={() => router.push("/")}
-                  className="w-full"
-                >
-                  Back to Home
-                </Button>
-              </CardContent>
-            </Card>
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading game...</p>
           </div>
         </div>
       </main>
