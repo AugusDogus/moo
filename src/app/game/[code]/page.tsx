@@ -241,7 +241,7 @@ export default function GamePage() {
           <div className="flex flex-col items-center justify-center gap-8">
             <div className="space-y-4 text-center">
               <h1 className="text-foreground text-4xl font-bold tracking-tight">
-                <span className="text-primary">moo</span>
+                <span className="text-primary font-serif">moo</span>
               </h1>
               <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
             </div>
@@ -320,7 +320,7 @@ export default function GamePage() {
           <div className="flex flex-col items-center justify-center gap-8">
             <div className="space-y-4 text-center">
               <h1 className="text-foreground text-4xl font-bold tracking-tight">
-                <span className="text-primary">moo</span>
+                <span className="text-primary font-serif">moo</span>
               </h1>
               <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
             </div>
@@ -429,7 +429,7 @@ export default function GamePage() {
             <div className="flex flex-col items-center justify-center gap-8">
               <div className="space-y-4 text-center">
                 <h1 className="text-foreground text-4xl font-bold tracking-tight">
-                  <span className="text-primary">moo</span>
+                  <span className="text-primary font-serif">moo</span>
                 </h1>
                 <div className="text-2xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
                 <div className="text-muted-foreground text-sm">

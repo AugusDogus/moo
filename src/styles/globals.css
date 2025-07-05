@@ -41,7 +41,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: Nunito, sans-serif;
   --font-mono: JetBrains Mono, monospace;
-  --font-serif: PT Serif, serif;
+  --font-serif: var(--font-pt-serif), serif;
   --radius: 0.425rem;
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
@@ -110,7 +110,7 @@
   --sidebar-ring: oklch(0.71 0.005 0);
   --destructive-foreground: oklch(0.97 0.018 0);
   --font-sans: system-ui, -apple-system, sans-serif;
-  --font-serif: Source Serif 4, serif;
+  --font-serif: var(--font-pt-serif), serif;
   --font-mono: JetBrains Mono, monospace;
   --shadow-color: hsl(88 22% 35% / 0.15);
   --shadow-opacity: 0.15;
@@ -168,7 +168,7 @@
   --destructive-foreground: oklch(0.9357 0.0201 84.5907);
   --radius: 0.425rem;
   --font-sans: system-ui, -apple-system, sans-serif;
-  --font-serif: Source Serif 4, serif;
+  --font-serif: var(--font-pt-serif), serif;
   --font-mono: JetBrains Mono, monospace;
   --shadow-color: hsl(88 22% 35% / 0.15);
   --shadow-opacity: 0.15;
