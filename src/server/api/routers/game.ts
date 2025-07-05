@@ -453,4 +453,66 @@ export const gameRouter = createTRPCRouter({
       
       return myGames;
     }),
+
+  // Get user's role in a room (creator, player, or visitor)
+  getUserRoomRole: protectedProcedure
+    .input(z.object({
+      code: z.string().length(4),
+    }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.authSession.user.id;
+      
+      const room = await ctx.db.query.gameRooms.findFirst({
+        where: eq(gameRooms.code, input.code.toUpperCase()),
+      });
+      
+      if (!room) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Room not found",
+        });
+      }
+      
+      // Check if user is the room creator
+      if (room.createdBy === userId) {
+        // Check if there's an active game
+        const game = await ctx.db.query.games.findFirst({
+          where: eq(games.roomId, room.id),
+        });
+        
+        return {
+          role: "creator" as const,
+          roomId: room.id,
+          gameId: game?.id,
+          gameStatus: game?.status,
+        };
+      }
+      
+      // Check if user is a player in any game in this room
+      const game = await ctx.db.query.games.findFirst({
+        where: and(
+          eq(games.roomId, room.id),
+          or(
+            eq(games.player1Id, userId),
+            eq(games.player2Id, userId)
+          )
+        ),
+      });
+      
+      if (game) {
+        return {
+          role: "player" as const,
+          roomId: room.id,
+          gameId: game.id,
+          gameStatus: game.status,
+        };
+      }
+      
+      return {
+        role: "visitor" as const,
+        roomId: room.id,
+        gameId: null,
+        gameStatus: null,
+      };
+    }),
 });
