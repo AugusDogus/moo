@@ -1,21 +1,21 @@
-import { z } from "zod";
-import { eq, and, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
+import { and, eq, or } from "drizzle-orm";
 import { EventEmitter } from "events";
+import { z } from "zod";
 
+import {
+  calculateBullsAndCows,
+  generateRoomCode,
+  isValidCode,
+  isWinningGuess,
+} from "~/lib/game-utils";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { gameRooms, games, gameMoves } from "~/server/db/schema";
-import {
-  generateRoomCode,
-  calculateBullsAndCows,
-  isWinningGuess,
-  isValidCode,
-} from "~/lib/game-utils";
+import { gameMoves, gameRooms, games } from "~/server/db/schema";
 import { markRoomAsActive, markRoomAsEmpty } from "~/server/room-cleanup";
 
 // Event emitter for real-time game updates
@@ -568,7 +568,8 @@ export const gameRouter = createTRPCRouter({
           data: { winnerId: userId, bulls, cows },
         } as GameUpdateEvent);
       } else {
-        // Check if both players have made their guesses for this round
+        // Use atomic operation to increment round only if exactly 2 moves exist for current round
+        // This prevents race condition where both players increment the round simultaneously
         const roundMoves = await ctx.db.query.gameMoves.findMany({
           where: and(
             eq(gameMoves.gameId, game.id),
@@ -576,12 +577,18 @@ export const gameRouter = createTRPCRouter({
           ),
         });
 
-        if (roundMoves.length >= 2) {
-          // Both players have guessed, increment round
+        if (roundMoves.length === 2) {
+          // Attempt to increment round only if current round matches what we expect
+          // This is an atomic operation that will only succeed once
           await ctx.db
             .update(games)
             .set({ currentRound: game.currentRound + 1 })
-            .where(eq(games.id, game.id));
+            .where(
+              and(
+                eq(games.id, game.id),
+                eq(games.currentRound, game.currentRound),
+              ),
+            );
         }
 
         // Emit move made event
@@ -710,7 +717,8 @@ export const gameRouter = createTRPCRouter({
           data: { winnerId: userId, bulls, cows },
         } as GameUpdateEvent);
       } else {
-        // Check if both players have made their guesses for this round
+        // Use atomic operation to increment round only if exactly 2 moves exist for current round
+        // This prevents race condition where both players increment the round simultaneously
         const roundMoves = await ctx.db.query.gameMoves.findMany({
           where: and(
             eq(gameMoves.gameId, input.gameId),
@@ -718,12 +726,18 @@ export const gameRouter = createTRPCRouter({
           ),
         });
 
-        if (roundMoves.length >= 2) {
-          // Both players have guessed, increment round
+        if (roundMoves.length === 2) {
+          // Attempt to increment round only if current round matches what we expect
+          // This is an atomic operation that will only succeed once
           await ctx.db
             .update(games)
             .set({ currentRound: game.currentRound + 1 })
-            .where(eq(games.id, input.gameId));
+            .where(
+              and(
+                eq(games.id, input.gameId),
+                eq(games.currentRound, game.currentRound),
+              ),
+            );
         }
 
         // Emit move made event
