@@ -18,97 +18,81 @@ interface GameMove {
 interface GameBoardProps {
   moves: GameMove[];
   playerId: string;
-  playerName: string;
   isCurrentPlayer?: boolean;
-  maxRounds?: number;
+  showTitle?: boolean;
 }
 
 export function GameBoard({ 
   moves, 
   playerId, 
-  playerName, 
   isCurrentPlayer = false,
-  maxRounds = 10 
+  showTitle = true
 }: GameBoardProps) {
-  // Filter moves for this player
-  const playerMoves = moves.filter(move => move.playerId === playerId);
-  
-  // Sort by round
-  const sortedMoves = playerMoves.sort((a, b) => a.round - b.round);
+  // Filter moves for this player and sort by round
+  const playerMoves = moves
+    .filter(move => move.playerId === playerId)
+    .sort((a, b) => a.round - b.round);
 
-  // Create rows for display (fill empty rounds)
-  const rows = [];
-  for (let round = 1; round <= maxRounds; round++) {
-    const move = sortedMoves.find(m => m.round === round);
-    rows.push({
-      round,
-      move: move ?? null,
-    });
+  if (playerMoves.length === 0) {
+    return (
+      <Card className={`w-full ${isCurrentPlayer ? 'border-primary' : ''}`}>
+        {showTitle && (
+          <CardHeader className="pb-3">
+            <CardTitle className="text-center text-lg">
+              Your Guesses
+            </CardTitle>
+          </CardHeader>
+        )}
+        <CardContent>
+          <div className="text-center text-muted-foreground py-8">
+            No guesses yet
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <Card className={`w-full max-w-md ${isCurrentPlayer ? 'border-primary' : ''}`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
-          {playerName}
-          {isCurrentPlayer && (
-            <Badge variant="default" className="text-xs">
-              You
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
+    <Card className={`w-full ${isCurrentPlayer ? 'border-primary' : ''}`}>
+      {showTitle && (
+        <CardHeader className="pb-3">
+          <CardTitle className="text-center text-lg">
+            Your Guesses
+          </CardTitle>
+        </CardHeader>
+      )}
       <CardContent>
-        <div className="space-y-2">
-          {rows.map(({ round, move }) => (
+        <div className="space-y-3">
+          {playerMoves.map((move) => (
             <div
-              key={round}
-              className={`flex items-center justify-between p-2 rounded border ${
-                move ? 'bg-accent/50' : 'bg-muted/30'
-              }`}
+              key={move.id}
+              className="flex items-center justify-between p-4 rounded border bg-accent/30"
             >
               {/* Round number */}
-              <div className="text-xs text-muted-foreground w-6">
-                {round}
+              <div className="text-sm font-medium text-muted-foreground w-12 flex-shrink-0">
+                {move.round}
               </div>
               
-              {/* Guess */}
-              <div className="flex gap-1">
-                {move ? (
-                  codeToEmojis(move.guess).map((emoji, index) => (
-                    <div
-                      key={index}
-                      className="w-8 h-8 flex items-center justify-center text-lg bg-background border rounded"
-                    >
-                      {emoji}
-                    </div>
-                  ))
-                ) : (
-                  Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="w-8 h-8 flex items-center justify-center text-lg bg-background border rounded opacity-50"
-                    >
-                      ?
-                    </div>
-                  ))
-                )}
+              {/* Guess - same size as input */}
+              <div className="flex gap-2 flex-1 justify-center">
+                {codeToEmojis(move.guess).map((emoji, index) => (
+                  <div
+                    key={index}
+                    className="w-16 h-16 flex items-center justify-center text-2xl bg-background border-2 rounded-lg font-medium"
+                  >
+                    {emoji}
+                  </div>
+                ))}
               </div>
               
               {/* Bulls and Cows */}
-              <div className="flex gap-1">
-                {move ? (
-                  <>
-                    <Badge variant="destructive" className="text-xs px-1">
-                      🐂 {move.bulls}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs px-1">
-                      🐄 {move.cows}
-                    </Badge>
-                  </>
-                ) : (
-                  <div className="w-16 h-6 bg-muted rounded opacity-50"></div>
-                )}
+              <div className="flex gap-2 flex-shrink-0">
+                <Badge variant="destructive" className="text-sm px-3 py-1">
+                  🐂 {move.bulls}
+                </Badge>
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  🐄 {move.cows}
+                </Badge>
               </div>
             </div>
           ))}
