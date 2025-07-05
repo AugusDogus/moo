@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 export default function TermsOfService() {
   return (
-    <>
-      <main className="bg-background min-h-screen">
+    <div className="bg-background flex min-h-[100dvh] flex-col">
+      <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-4xl">
             <div className="mb-12 text-center">
@@ -12,7 +12,7 @@ export default function TermsOfService() {
                 Terms of Service
               </h1>
               <p className="text-muted-foreground text-lg">
-                Last updated: {new Date().toLocaleDateString()}
+                Last updated: December 5, 2024
               </p>
             </div>
 
@@ -225,6 +225,6 @@ export default function TermsOfService() {
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }
