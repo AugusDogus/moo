@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { SignInWithRedirect } from "~/components/auth/sign-in-with-redirect";
-import { Loader2, Users, Copy, Check, LogIn } from "lucide-react";
+import { Loader2, Copy, Check, LogIn } from "lucide-react";
 import { authClient } from "~/lib/auth/client";
 
 export default function GameRoomPage() {
@@ -35,7 +35,7 @@ export default function GameRoomPage() {
     onSuccess: (data: { gameId: string | null; roomId: string; isCreator: boolean }) => {
       if (data.gameId) {
         // There's an active game, go to it
-        router.push(`/game/play/${roomCode}`);
+        router.push(`/game/${roomCode}`);
       } else {
         // No active game, stay on room page (it will update automatically)
         window.location.reload();
@@ -50,7 +50,7 @@ export default function GameRoomPage() {
   // Redirect if user already has an active game in this room
   useEffect(() => {
     if (userRole?.gameId && userRole.gameStatus !== "finished") {
-      router.push(`/game/play/${roomCode}`);
+      router.push(`/game/${roomCode}`);
     }
   }, [userRole, router, roomCode]);
 
@@ -61,7 +61,7 @@ export default function GameRoomPage() {
       enabled: !!roomInfo?.id,
       onData: (event: unknown) => {
                  if (event && typeof event === "object" && "type" in event && event.type === "game_started") {
-           router.push(`/game/play/${roomCode}`);
+           router.push(`/game/${roomCode}`);
          }
       },
     }
@@ -141,7 +141,7 @@ export default function GameRoomPage() {
               <span className="text-primary">moo</span>
             </h1>
             <div className="text-2xl">
-              🐄 🥛 🍄 🌸 🌿 🧺
+              🐮 🥛 🍄 🌸 🌿 🧺
             </div>
           </div>
 
@@ -157,7 +157,6 @@ export default function GameRoomPage() {
             <CardContent className="space-y-6">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users className="h-5 w-5 text-muted-foreground" />
                   <span className="text-lg font-semibold">
                     1/2 players
                   </span>
@@ -172,7 +171,7 @@ export default function GameRoomPage() {
                   </p>
                 ) : userRole.role === "creator" ? (
                   <p className="text-muted-foreground text-sm">
-                    You created this room - waiting for another player...
+                    Created by {session.user.name}
                   </p>
                 ) : userRole.role === "player" ? (
                   <p className="text-muted-foreground text-sm">
@@ -242,38 +241,33 @@ export default function GameRoomPage() {
               ) : userRole.role === "creator" ? (
                 // Room creator - show waiting state
                 <div className="text-center">
-                                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                     <div className="flex items-center justify-center gap-2 mb-2">
-                       <span className="text-sm font-medium text-blue-900">
-                         Your Room
-                       </span>
-                     </div>
-                    <p className="text-sm text-blue-700 mb-4">
-                      You created this room. Share the code with a friend to start playing!
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-sm font-medium text-amber-900">
+                        Your Game Room
+                      </span>
+                    </div>
+                    <p className="text-sm text-amber-700 mb-4">
+                      Share the code with a friend to start playing!
                     </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-amber-700">
+                        Waiting for another player...
+                      </span>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-center gap-2 mt-4 mb-4">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">
-                      Waiting for another player to join...
-                    </span>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    The game will start automatically when another player joins.
-                  </p>
                 </div>
               ) : userRole.role === "player" ? (
                 // User is already a player - show game in progress
                 <div className="text-center">
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="text-sm font-medium text-green-900">
+                      <span className="text-sm font-medium text-emerald-900">
                         You&apos;re in this game!
                       </span>
                     </div>
-                    <p className="text-sm text-green-700 mb-4">
+                    <p className="text-sm text-emerald-700 mb-4">
                       Redirecting you back to the game...
                     </p>
                     <Loader2 className="h-4 w-4 animate-spin mx-auto" />

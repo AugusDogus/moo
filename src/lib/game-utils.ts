@@ -3,7 +3,7 @@
  */
 
 // Available emojis for the game
-export const GAME_EMOJIS = ["🐄", "🥛", "🍄", "🌸", "🌿", "🧺"] as const;
+export const GAME_EMOJIS = ["�", "🥛", "🍄", "🌸", "🌿", "🧺"] as const;
 
 // Convert emoji to index for storage
 export const emojiToIndex = (emoji: string): number => {
