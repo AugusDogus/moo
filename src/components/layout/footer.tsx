@@ -15,7 +15,7 @@ export function Footer() {
               Privacy Policy
             </a>
             <a
-              href="/terms"
+              href="/tos"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               Terms of Service

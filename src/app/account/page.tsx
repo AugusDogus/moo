@@ -90,7 +90,7 @@ export default async function AccountPage() {
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">
                     By using moo, you agree to our{" "}
-                    <a href="/terms" className="text-primary hover:underline">
+                    <a href="/tos" className="text-primary hover:underline">
                       Terms of Service
                     </a>
                     . Please review them to understand your rights and
