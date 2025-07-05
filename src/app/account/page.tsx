@@ -17,8 +17,8 @@ export default async function AccountPage() {
   }
 
   return (
-    <>
-      <main className="bg-background min-h-screen">
+    <div className="bg-background flex min-h-[100dvh] flex-col">
+      <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-2xl">
             <div className="mb-12 text-center">
@@ -105,6 +105,6 @@ export default async function AccountPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }
