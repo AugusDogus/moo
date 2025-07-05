@@ -14,24 +14,24 @@ import { emojisToCode } from "~/lib/game-utils";
 export default function GamePlayPage() {
   const params = useParams();
   const router = useRouter();
-  const gameId = params.gameId as string;
+  const roomCode = params.code as string;
   
   const [selectedCode, setSelectedCode] = useState<string[]>(["", "", "", ""]);
   const [guess, setGuess] = useState<string[]>(["", "", "", ""]);
   const [gamePhase, setGamePhase] = useState<"loading" | "code_selection" | "playing" | "finished">("loading");
 
-  const { data: gameState, isLoading, error, refetch } = api.game.getGameState.useQuery(
-    { gameId },
-    { enabled: !!gameId }
+  const { data: gameState, isLoading, error, refetch } = api.game.getGameStateByCode.useQuery(
+    { code: roomCode },
+    { enabled: !!roomCode }
   );
 
-  const setPlayerCode = api.game.setPlayerCode.useMutation({
+  const setPlayerCode = api.game.setPlayerCodeByCode.useMutation({
     onSuccess: () => {
       void refetch();
     },
   });
 
-  const makeGuess = api.game.makeGuess.useMutation({
+  const makeGuess = api.game.makeGuessByCode.useMutation({
     onSuccess: (result: { isWin: boolean; bulls: number; cows: number }) => {
       if (result.isWin) {
         setGamePhase("finished");
@@ -41,16 +41,16 @@ export default function GamePlayPage() {
     },
   });
 
-  // Subscribe to game updates
+  // Subscribe to game updates - only if game is not finished
   api.game.subscribeToGameUpdates.useSubscription(
     { roomId: gameState?.game.roomId ?? "" },
     {
-      enabled: !!gameState?.game.roomId,
-             onData: (event: unknown) => {
-         if (event && typeof event === "object") {
-           void refetch();
-         }
-       },
+      enabled: !!gameState?.game.roomId && gameState.game.status !== "finished",
+      onData: (event: unknown) => {
+        if (event && typeof event === "object") {
+          void refetch();
+        }
+      },
     }
   );
 
@@ -70,14 +70,14 @@ export default function GamePlayPage() {
   const handleSetCode = () => {
     if (selectedCode.every(emoji => emoji !== "")) {
       const code = emojisToCode(selectedCode);
-      setPlayerCode.mutate({ gameId, code });
+      setPlayerCode.mutate({ roomCode, code });
     }
   };
 
   const handleMakeGuess = () => {
     if (guess.every(emoji => emoji !== "")) {
       const guessCode = emojisToCode(guess);
-      makeGuess.mutate({ gameId, guess: guessCode });
+      makeGuess.mutate({ roomCode, guess: guessCode });
     }
   };
 
@@ -96,6 +96,12 @@ export default function GamePlayPage() {
     const currentRoundMove = playerMoves.find((move: { round: number }) => move.round === currentRound);
     
     return !currentRoundMove;
+  };
+
+  const isWinner = () => {
+    if (!gameState?.game || gameState.game.status !== "finished") return false;
+    const currentUserId = gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id;
+    return gameState.game.winnerId === currentUserId;
   };
 
   if (isLoading) {
@@ -124,7 +130,7 @@ export default function GamePlayPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-center text-muted-foreground">
-                                     This game doesn&apos;t exist or you don&apos;t have access to it.
+                  This game doesn&apos;t exist or you don&apos;t have access to it.
                 </p>
                 <Button
                   onClick={() => router.push("/")}
@@ -132,55 +138,6 @@ export default function GamePlayPage() {
                 >
                   Back to Home
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (gamePhase === "finished") {
-    const isWinner = gameState.game.winnerId === (gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id);
-    
-    return (
-      <main className="bg-background min-h-screen">
-        <div className="container mx-auto px-4 py-16">
-          <div className="flex flex-col items-center justify-center gap-8">
-            <div className="space-y-4 text-center">
-              <h1 className="text-foreground text-4xl font-bold tracking-tight">
-                <span className="text-primary">moo</span>
-              </h1>
-              <div className="text-2xl">
-                🐄 🥛 🍄 🌸 🌿 🧺
-              </div>
-            </div>
-
-            <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Game Over
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className={`text-2xl font-bold ${isWinner ? 'text-green-600' : 'text-red-600'}`}>
-                    {isWinner ? "You Won! 🎉" : "You Lost 😔"}
-                  </div>
-                  <p className="text-muted-foreground text-sm mt-2">
-                    {isWinner ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => router.push("/")}
-                    className="flex-1"
-                  >
-                    New Game
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -200,7 +157,40 @@ export default function GamePlayPage() {
             <div className="text-2xl">
               🐄 🥛 🍄 🌸 🌿 🧺
             </div>
+            <div className="text-sm text-muted-foreground">
+              Room: {roomCode}
+            </div>
           </div>
+
+          {gamePhase === "finished" && (
+            <Card className="w-full max-w-md mb-6">
+              <CardHeader>
+                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Game Over
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center">
+                  <div className={`text-2xl font-bold ${isWinner() ? 'text-green-600' : 'text-red-600'}`}>
+                    {isWinner() ? "You Won! 🎉" : "You Lost 😔"}
+                  </div>
+                  <p className="text-muted-foreground text-sm mt-2">
+                    {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => router.push("/")}
+                    className="flex-1"
+                  >
+                    New Game
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {gamePhase === "code_selection" && (
             <div className="w-full max-w-md">
@@ -250,7 +240,7 @@ export default function GamePlayPage() {
             </div>
           )}
 
-          {gamePhase === "playing" && (
+          {(gamePhase === "playing" || gamePhase === "finished") && (
             <div className="w-full max-w-6xl">
               <div className="grid gap-8 lg:grid-cols-2">
                 {/* Game boards */}
@@ -272,52 +262,54 @@ export default function GamePlayPage() {
                   </div>
                 </div>
 
-                {/* Guess input */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-center">Make Your Guess</h2>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-center text-lg">
-                        Round {gameState.game.currentRound}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {canMakeGuess() ? (
-                        <>
-                          <EmojiPicker
-                            selectedCode={guess}
-                            onCodeChange={setGuess}
-                            title="What's your guess?"
-                            disabled={makeGuess.isPending}
-                          />
-                          <Button
-                            onClick={handleMakeGuess}
-                            disabled={!guess.every(emoji => emoji !== "") || makeGuess.isPending}
-                            className="w-full"
-                            size="lg"
-                          >
-                            {makeGuess.isPending ? "Making Guess..." : "Submit Guess"}
-                          </Button>
-                        </>
-                      ) : (
-                        <div className="text-center">
-                          <Badge variant="secondary" className="mb-4">
-                            Guess Made ✓
-                          </Badge>
-                          <p className="text-muted-foreground text-sm">
-                            Waiting for opponent to make their guess...
-                          </p>
-                          <div className="flex items-center justify-center gap-2 mt-4">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm text-muted-foreground">
-                              Round will advance when both players guess
-                            </span>
+                {/* Guess input - only show if game is still playing */}
+                {gamePhase === "playing" && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold text-center">Make Your Guess</h2>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-center text-lg">
+                          Round {gameState.game.currentRound}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {canMakeGuess() ? (
+                          <>
+                            <EmojiPicker
+                              selectedCode={guess}
+                              onCodeChange={setGuess}
+                              title="What's your guess?"
+                              disabled={makeGuess.isPending}
+                            />
+                            <Button
+                              onClick={handleMakeGuess}
+                              disabled={!guess.every(emoji => emoji !== "") || makeGuess.isPending}
+                              className="w-full"
+                              size="lg"
+                            >
+                              {makeGuess.isPending ? "Making Guess..." : "Submit Guess"}
+                            </Button>
+                          </>
+                        ) : (
+                          <div className="text-center">
+                            <Badge variant="secondary" className="mb-4">
+                              Guess Made ✓
+                            </Badge>
+                            <p className="text-muted-foreground text-sm">
+                              Waiting for opponent to make their guess...
+                            </p>
+                            <div className="flex items-center justify-center gap-2 mt-4">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-sm text-muted-foreground">
+                                Round will advance when both players guess
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </div>
             </div>
           )}
