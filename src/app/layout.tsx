@@ -1,7 +1,9 @@
+import "~/lib/discord-proxy";
+
 import "~/styles/globals.css";
 
-import { type Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { type Metadata } from "next";
 
 import { AuthRedirectHandler } from "~/components/auth/auth-redirect-handler";
 import { TRPCReactProvider } from "~/trpc/react";

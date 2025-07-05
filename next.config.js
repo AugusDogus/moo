@@ -16,6 +16,18 @@ const config = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/.proxy/api/:path*",
+        destination: "https://moo.augie.gg/api/:path*",
+      },
+      {
+        source: "/.proxy/matsu/:path*",
+        destination: "https://matsu-theme.vercel.app/:path*",
+      },
+    ];
+  },
 };
 
 export default config;
