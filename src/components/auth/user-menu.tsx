@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { signOut } from "~/lib/auth/client";
 
@@ -15,10 +16,12 @@ export function UserMenu({ user }: UserMenuProps) {
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">
         {user.image && (
-          <img
+          <Image
             src={user.image}
             alt="Profile"
-            className="w-8 h-8 rounded-full"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full"
           />
         )}
         <span className="text-foreground font-medium">
