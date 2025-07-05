@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
 
 import { SignInButton } from "~/components/auth/sign-in-button";
+import { UserMenu } from "~/components/auth/user-menu";
 import { CreateRoomCard, JoinRoomCard } from "~/components/game/room-controls";
+import { Footer } from "~/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { auth } from "~/lib/auth/server";
 import { HydrateClient } from "~/trpc/server";
@@ -51,6 +53,7 @@ export default async function Home() {
             </div>
           </div>
         </main>
+        <Footer />
       </HydrateClient>
     );
   }
@@ -72,10 +75,8 @@ export default async function Home() {
               <div className="text-4xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
             </div>
 
-            <div className="text-center">
-              <p className="text-foreground text-lg font-medium">
-                Welcome back, {session.user.name}!
-              </p>
+            <div className="flex justify-center">
+              <UserMenu user={session.user} />
             </div>
 
             <div className="grid w-full max-w-2xl justify-center gap-8 md:grid-cols-2">
@@ -85,6 +86,7 @@ export default async function Home() {
           </div>
         </div>
       </main>
+      <Footer />
     </HydrateClient>
   );
 }
