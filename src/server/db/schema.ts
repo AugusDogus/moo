@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { index, sqliteTableCreator } from "drizzle-orm/sqlite-core";
 
 /**
@@ -165,3 +165,54 @@ export const gameMoves = createTable("game_move", (d) => ({
 // Add indexes for performance
 export const gameRoomsIndex = index("game_rooms_code_idx").on(gameRooms.code);
 export const gameMovesIndex = index("game_moves_game_round_idx").on(gameMoves.gameId, gameMoves.round);
+
+// Define relations
+export const gameRoomsRelations = relations(gameRooms, ({ one, many }) => ({
+  createdBy: one(user, {
+    fields: [gameRooms.createdBy],
+    references: [user.id],
+  }),
+  games: many(games),
+}));
+
+export const gamesRelations = relations(games, ({ one, many }) => ({
+  room: one(gameRooms, {
+    fields: [games.roomId],
+    references: [gameRooms.id],
+  }),
+  player1: one(user, {
+    fields: [games.player1Id],
+    references: [user.id],
+    relationName: "player1",
+  }),
+  player2: one(user, {
+    fields: [games.player2Id],
+    references: [user.id],
+    relationName: "player2",
+  }),
+  winner: one(user, {
+    fields: [games.winnerId],
+    references: [user.id],
+    relationName: "winner",
+  }),
+  moves: many(gameMoves),
+}));
+
+export const gameMovesRelations = relations(gameMoves, ({ one }) => ({
+  game: one(games, {
+    fields: [gameMoves.gameId],
+    references: [games.id],
+  }),
+  player: one(user, {
+    fields: [gameMoves.playerId],
+    references: [user.id],
+  }),
+}));
+
+export const userRelations = relations(user, ({ many }) => ({
+  createdRooms: many(gameRooms),
+  player1Games: many(games, { relationName: "player1" }),
+  player2Games: many(games, { relationName: "player2" }),
+  wonGames: many(games, { relationName: "winner" }),
+  moves: many(gameMoves),
+}));
