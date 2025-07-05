@@ -2,8 +2,22 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 
-import { TRPCReactProvider } from "~/trpc/react";
 import { AuthRedirectHandler } from "~/components/auth/auth-redirect-handler";
+import { TRPCReactProvider } from "~/trpc/react";
+
+import { Nunito, PT_Sans } from "next/font/google";
+import { cn } from "~/lib/utils";
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+});
+
+const ptSans = PT_Sans({
+  variable: "--font-pt-sans",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
 
 export const metadata: Metadata = {
   title: "moo",
@@ -17,9 +31,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>
+      <body className={cn(nunito.variable, ptSans.variable, "antialiased")}>
         <TRPCReactProvider>
           <AuthRedirectHandler />
+          <div className="texture" />
           {children}
         </TRPCReactProvider>
       </body>

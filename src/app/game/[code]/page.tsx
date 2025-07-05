@@ -1,17 +1,17 @@
 "use client";
 
+import { Check, Copy, Loader2, LogIn } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Loader2, Copy, Check, LogIn } from "lucide-react";
+import { SignInWithRedirect } from "~/components/auth/sign-in-with-redirect";
 import { EmojiPicker } from "~/components/game/emoji-picker";
 import { GameBoard } from "~/components/game/game-board";
-import { emojisToCode } from "~/lib/game-utils";
-import { SignInWithRedirect } from "~/components/auth/sign-in-with-redirect";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { authClient } from "~/lib/auth/client";
+import { emojisToCode } from "~/lib/game-utils";
+import { api } from "~/trpc/react";
 
 export default function GamePage() {
   const params = useParams();
@@ -247,18 +247,6 @@ export default function GamePage() {
             </div>
 
             <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
-                  Room {roomCode}
-                  <Badge
-                    variant={
-                      roomInfo?.status === "waiting" ? "secondary" : "default"
-                    }
-                  >
-                    {roomInfo?.status}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center">
                   <p className="text-muted-foreground text-sm">
@@ -338,18 +326,6 @@ export default function GamePage() {
             </div>
 
             <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
-                  Room {roomCode}
-                  <Badge
-                    variant={
-                      roomInfo?.status === "waiting" ? "secondary" : "default"
-                    }
-                  >
-                    {roomInfo?.status}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center">
                   <div className="mb-2 flex items-center justify-center gap-2">
@@ -462,12 +438,6 @@ export default function GamePage() {
               </div>
 
               <Card className="w-full max-w-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-center gap-2 text-center text-lg">
-                    Room {roomCode}
-                    <Badge variant="secondary">waiting</Badge>
-                  </CardTitle>
-                </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="text-center">
                     <div className="mb-2 flex items-center justify-center gap-2">
@@ -508,7 +478,7 @@ export default function GamePage() {
                   </div>
 
                   <div className="text-center">
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <div className="border-primary-200 rounded-lg border bg-amber-50 p-4">
                       <div className="mb-2 flex items-center justify-center gap-2">
                         <span className="text-sm font-medium text-amber-900">
                           Your Game Room
