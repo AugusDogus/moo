@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
                 Privacy Policy
               </h1>
               <p className="text-muted-foreground text-lg">
-                Last updated: December 5, 2024
+                Last updated: July 5, 2025
               </p>
             </div>
 
