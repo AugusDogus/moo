@@ -7,7 +7,7 @@ export const GAME_EMOJIS = ["🐮", "🥛", "🍄", "🌸", "🌿", "🧺"] as c
 
 // Convert emoji to index for storage
 export const emojiToIndex = (emoji: string): number => {
-  const index = GAME_EMOJIS.indexOf(emoji as typeof GAME_EMOJIS[number]);
+  const index = GAME_EMOJIS.indexOf(emoji as (typeof GAME_EMOJIS)[number]);
   return index === -1 ? 0 : index;
 };
 
@@ -37,25 +37,28 @@ export const generateRoomCode = (): string => {
 };
 
 // Calculate bulls and cows for a guess against the secret code
-export const calculateBullsAndCows = (guess: string, secret: string): { bulls: number; cows: number } => {
+export const calculateBullsAndCows = (
+  guess: string,
+  secret: string,
+): { bulls: number; cows: number } => {
   if (guess.length !== 4 || secret.length !== 4) {
     return { bulls: 0, cows: 0 };
   }
 
   const guessArray = guess.split("");
   const secretArray = secret.split("");
-  
+
   let bulls = 0;
   let cows = 0;
-  
+
   // Count bulls (correct position)
   const guessRemaining: string[] = [];
   const secretRemaining: string[] = [];
-  
+
   for (let i = 0; i < 4; i++) {
     const guessChar = guessArray[i];
     const secretChar = secretArray[i];
-    
+
     if (guessChar && secretChar && guessChar === secretChar) {
       bulls++;
     } else {
@@ -63,7 +66,7 @@ export const calculateBullsAndCows = (guess: string, secret: string): { bulls: n
       if (secretChar) secretRemaining.push(secretChar);
     }
   }
-  
+
   // Count cows (correct emoji, wrong position)
   for (const guessChar of guessRemaining) {
     const secretIndex = secretRemaining.indexOf(guessChar);
@@ -72,7 +75,7 @@ export const calculateBullsAndCows = (guess: string, secret: string): { bulls: n
       secretRemaining.splice(secretIndex, 1);
     }
   }
-  
+
   return { bulls, cows };
 };
 
@@ -84,7 +87,7 @@ export const isWinningGuess = (bulls: number): boolean => {
 // Validate that a code uses only valid emojis and has 4 characters
 export const isValidCode = (code: string): boolean => {
   if (code.length !== 4) return false;
-  
+
   return code.split("").every((char) => {
     const index = parseInt(char);
     return !isNaN(index) && index >= 0 && index < GAME_EMOJIS.length;

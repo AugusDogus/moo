@@ -22,29 +22,27 @@ interface GameBoardProps {
   showTitle?: boolean;
 }
 
-export function GameBoard({ 
-  moves, 
-  playerId, 
+export function GameBoard({
+  moves,
+  playerId,
   isCurrentPlayer = false,
-  showTitle = true
+  showTitle = true,
 }: GameBoardProps) {
   // Filter moves for this player and sort by round
   const playerMoves = moves
-    .filter(move => move.playerId === playerId)
+    .filter((move) => move.playerId === playerId)
     .sort((a, b) => a.round - b.round);
 
   if (playerMoves.length === 0) {
     return (
-      <Card className={`w-full ${isCurrentPlayer ? 'border-primary' : ''}`}>
+      <Card className={`w-full ${isCurrentPlayer ? "border-primary" : ""}`}>
         {showTitle && (
           <CardHeader className="pb-3">
-            <CardTitle className="text-center text-lg">
-              Your Guesses
-            </CardTitle>
+            <CardTitle className="text-center text-lg">Your Guesses</CardTitle>
           </CardHeader>
         )}
         <CardContent>
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-muted-foreground py-8 text-center">
             No guesses yet
           </div>
         </CardContent>
@@ -53,12 +51,10 @@ export function GameBoard({
   }
 
   return (
-    <Card className={`w-full ${isCurrentPlayer ? 'border-primary' : ''}`}>
+    <Card className={`w-full ${isCurrentPlayer ? "border-primary" : ""}`}>
       {showTitle && (
         <CardHeader className="pb-3">
-          <CardTitle className="text-center text-lg">
-            Your Guesses
-          </CardTitle>
+          <CardTitle className="text-center text-lg">Your Guesses</CardTitle>
         </CardHeader>
       )}
       <CardContent>
@@ -66,33 +62,33 @@ export function GameBoard({
           {playerMoves.map((move) => (
             <div
               key={move.id}
-              className="p-4 rounded border bg-accent/30 space-y-3"
+              className="bg-accent/30 space-y-3 rounded border p-4"
             >
               {/* Round number and guess */}
-              <div className="flex items-center gap-4">
-                <div className="text-sm font-medium text-muted-foreground w-12 flex-shrink-0">
+              <div className="relative flex items-center gap-4">
+                <div className="text-muted-foreground absolute hidden w-fit flex-shrink-0 text-sm font-medium md:block">
                   {move.round}
                 </div>
-                
+
                 {/* Guess - same size as input */}
-                <div className="flex gap-2 flex-1 justify-center">
+                <div className="flex flex-1 justify-center gap-2">
                   {codeToEmojis(move.guess).map((emoji, index) => (
                     <div
                       key={index}
-                      className="w-16 h-16 flex items-center justify-center text-2xl bg-background border-2 rounded-lg font-medium"
+                      className="bg-background flex h-16 w-16 items-center justify-center rounded-lg border-2 text-2xl font-medium"
                     >
                       {emoji}
                     </div>
                   ))}
                 </div>
               </div>
-              
+
               {/* Bulls and Cows - underneath the emoji row */}
-              <div className="flex gap-2 justify-center">
-                <Badge variant="destructive" className="text-sm px-3 py-1">
+              <div className="flex justify-center gap-2">
+                <Badge variant="destructive" className="px-3 py-1 text-sm">
                   🐂 {move.bulls}
                 </Badge>
-                <Badge variant="secondary" className="text-sm px-3 py-1">
+                <Badge variant="secondary" className="px-3 py-1 text-sm">
                   🐄 {move.cows}
                 </Badge>
               </div>

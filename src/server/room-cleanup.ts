@@ -5,13 +5,13 @@ import { lt, eq, and } from "drizzle-orm";
 // Clean up empty rooms that have been empty for more than 5 minutes
 export async function cleanupEmptyRooms() {
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  
+
   try {
     // Find rooms that have been empty for more than 5 minutes
     const emptyRooms = await db.query.gameRooms.findMany({
       where: and(
         eq(gameRooms.status, "waiting"),
-        lt(gameRooms.emptyAt, fiveMinutesAgo)
+        lt(gameRooms.emptyAt, fiveMinutesAgo),
       ),
     });
 
@@ -25,10 +25,7 @@ export async function cleanupEmptyRooms() {
     for (const room of emptyRooms) {
       // Double-check there are no active games in this room before deletion
       const activeGame = await db.query.games.findFirst({
-        where: and(
-          eq(games.roomId, room.id),
-          eq(games.status, "playing")
-        ),
+        where: and(eq(games.roomId, room.id), eq(games.status, "playing")),
       });
 
       if (!activeGame) {
@@ -49,13 +46,14 @@ export async function cleanupEmptyRooms() {
 // Update room's emptyAt timestamp when it becomes empty
 export async function markRoomAsEmpty(roomId: string) {
   try {
-    await db.update(gameRooms)
-      .set({ 
+    await db
+      .update(gameRooms)
+      .set({
         emptyAt: new Date(),
-        status: "waiting" 
+        status: "waiting",
       })
       .where(eq(gameRooms.id, roomId));
-    
+
     console.log(`Marked room ${roomId} as empty`);
   } catch (error) {
     console.error("Error marking room as empty:", error);
@@ -65,12 +63,13 @@ export async function markRoomAsEmpty(roomId: string) {
 // Reset room's emptyAt timestamp when someone joins
 export async function markRoomAsActive(roomId: string) {
   try {
-    await db.update(gameRooms)
-      .set({ 
+    await db
+      .update(gameRooms)
+      .set({
         emptyAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Set to future date so it won't be cleaned up
       })
       .where(eq(gameRooms.id, roomId));
-    
+
     console.log(`Marked room ${roomId} as active`);
   } catch (error) {
     console.error("Error marking room as active:", error);
@@ -87,19 +86,22 @@ export function startRoomCleanupService() {
   }
 
   console.log("Starting room cleanup service - checking every 2 minutes");
-  
+
   // Run cleanup every 2 minutes
-  cleanupInterval = setInterval(() => {
-    console.log("Running room cleanup check...");
-    cleanupEmptyRooms()
-      .then((result) => {
-        if (result.cleaned > 0) {
-          console.log(`Cleaned up ${result.cleaned} empty rooms`);
-        }
-      })
-      .catch(console.error);
-  }, 2 * 60 * 1000); // Check every 2 minutes
-  
+  cleanupInterval = setInterval(
+    () => {
+      console.log("Running room cleanup check...");
+      cleanupEmptyRooms()
+        .then((result) => {
+          if (result.cleaned > 0) {
+            console.log(`Cleaned up ${result.cleaned} empty rooms`);
+          }
+        })
+        .catch(console.error);
+    },
+    2 * 60 * 1000,
+  ); // Check every 2 minutes
+
   // Also run an initial cleanup
   cleanupEmptyRooms().catch(console.error);
 }

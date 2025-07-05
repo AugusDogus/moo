@@ -12,21 +12,21 @@ interface EmojiPickerProps {
   title?: string;
 }
 
-export function EmojiPicker({ 
-  onCodeChange, 
-  selectedCode, 
-  disabled = false, 
-  title = "Pick your secret code" 
+export function EmojiPicker({
+  onCodeChange,
+  selectedCode,
+  disabled = false,
+  title = "Pick your secret code",
 }: EmojiPickerProps) {
   const [activeSlot, setActiveSlot] = useState(0);
 
   const handleEmojiClick = (emoji: string) => {
     if (disabled) return;
-    
+
     const newCode = [...selectedCode];
     newCode[activeSlot] = emoji;
     onCodeChange(newCode);
-    
+
     // Auto-advance to next slot
     if (activeSlot < 3) {
       setActiveSlot(activeSlot + 1);
@@ -45,7 +45,7 @@ export function EmojiPicker({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-center text-lg">{title}</CardTitle>
       </CardHeader>
@@ -57,7 +57,7 @@ export function EmojiPicker({
               key={index}
               variant={activeSlot === index ? "default" : "outline"}
               size="lg"
-              className="w-16 h-16 text-2xl p-0"
+              className="h-16 w-16 p-0 text-2xl"
               onClick={() => handleSlotClick(index)}
               disabled={disabled}
             >
@@ -73,7 +73,7 @@ export function EmojiPicker({
               key={index}
               variant="ghost"
               size="lg"
-              className="w-full h-16 text-3xl p-0 hover:bg-accent"
+              className="hover:bg-accent h-16 w-full p-0 text-3xl"
               onClick={() => handleEmojiClick(emoji)}
               disabled={disabled}
             >

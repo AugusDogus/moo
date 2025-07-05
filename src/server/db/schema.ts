@@ -128,9 +128,7 @@ export const games = createTable("game", (d) => ({
   player1Code: d.text({ length: 4 }), // Will be set when player picks their code
   player2Code: d.text({ length: 4 }), // Will be set when player picks their code
   currentRound: d.integer({ mode: "number" }).default(1).notNull(),
-  winnerId: d
-    .text()
-    .references(() => user.id, { onDelete: "set null" }),
+  winnerId: d.text().references(() => user.id, { onDelete: "set null" }),
   status: d.text().default("code_selection").notNull(),
   createdAt: d
     .integer({ mode: "timestamp" })
@@ -164,7 +162,10 @@ export const gameMoves = createTable("game_move", (d) => ({
 
 // Add indexes for performance
 export const gameRoomsIndex = index("game_rooms_code_idx").on(gameRooms.code);
-export const gameMovesIndex = index("game_moves_game_round_idx").on(gameMoves.gameId, gameMoves.round);
+export const gameMovesIndex = index("game_moves_game_round_idx").on(
+  gameMoves.gameId,
+  gameMoves.round,
+);
 
 // Define relations
 export const gameRoomsRelations = relations(gameRooms, ({ one, many }) => ({
