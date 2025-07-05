@@ -27,7 +27,7 @@ export default async function Home() {
                 </p>
                 
                 <div className="text-4xl">
-                  🐄 🥛 🍄 🌸 🌿 🧺
+                  � 🥛 🍄 🌸 🌿 🧺
                 </div>
               </div>
 
@@ -69,7 +69,7 @@ export default async function Home() {
               </p>
               
               <div className="text-4xl">
-                🐄 🥛 🍄 🌸 🌿 🧺
+                � 🥛 🍄 🌸 🌿 🧺
               </div>
             </div>
 

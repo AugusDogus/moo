@@ -65,7 +65,7 @@ export function JoinRoomCard() {
     onSuccess: (data: { gameId: string | null; roomId: string; isCreator: boolean }) => {
       if (data.gameId) {
         // There's an active game, go to it
-        router.push(`/game/play/${roomCode}`);
+        router.push(`/game/${roomCode}`);
       } else {
         // No active game, go to room waiting page
         // Extract room code from the roomCode state since we have it

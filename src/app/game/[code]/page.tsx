@@ -155,7 +155,7 @@ export default function GamePlayPage() {
               <span className="text-primary">moo</span>
             </h1>
             <div className="text-2xl">
-              🐄 🥛 🍄 🌸 🌿 🧺
+              🐮 🥛 🍄 🌸 🌿 🧺
             </div>
             <div className="text-sm text-muted-foreground">
               Room: {roomCode}
@@ -172,8 +172,8 @@ export default function GamePlayPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <div className={`text-2xl font-bold ${isWinner() ? 'text-green-600' : 'text-red-600'}`}>
-                    {isWinner() ? "You Won! 🎉" : "You Lost 😔"}
+                  <div className={`text-2xl font-bold ${isWinner() ? 'text-amber-700' : 'text-slate-600'}`}>
+                    {isWinner() ? "You Won!" : "You Lost"}
                   </div>
                   <p className="text-muted-foreground text-sm mt-2">
                     {isWinner() ? "You cracked your opponent's code first!" : "Your opponent cracked your code first!"}
@@ -243,23 +243,15 @@ export default function GamePlayPage() {
           {(gamePhase === "playing" || gamePhase === "finished") && (
             <div className="w-full max-w-6xl">
               <div className="grid gap-8 lg:grid-cols-2">
-                {/* Game boards */}
+                {/* Your game board */}
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-center">Game History</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <GameBoard
-                      moves={gameState.moves}
-                      playerId={gameState.game.player1Id}
-                      playerName="Player 1"
-                      isCurrentPlayer={gameState.isPlayer1}
-                    />
-                    <GameBoard
-                      moves={gameState.moves}
-                      playerId={gameState.game.player2Id}
-                      playerName="Player 2"
-                      isCurrentPlayer={gameState.isPlayer2}
-                    />
-                  </div>
+                  <h2 className="text-xl font-semibold text-center">Your Guesses</h2>
+                  <GameBoard
+                    moves={gameState.moves}
+                    playerId={gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id}
+                    playerName="You"
+                    isCurrentPlayer={true}
+                  />
                 </div>
 
                 {/* Guess input - only show if game is still playing */}
