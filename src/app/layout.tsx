@@ -1,6 +1,7 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 import { AuthRedirectHandler } from "~/components/auth/auth-redirect-handler";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -37,6 +38,7 @@ export default function RootLayout({
           <div className="texture" />
           {children}
         </TRPCReactProvider>
+        <Analytics />
       </body>
     </html>
   );
