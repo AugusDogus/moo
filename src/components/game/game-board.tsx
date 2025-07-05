@@ -66,27 +66,29 @@ export function GameBoard({
           {playerMoves.map((move) => (
             <div
               key={move.id}
-              className="flex items-center justify-between p-4 rounded border bg-accent/30"
+              className="p-4 rounded border bg-accent/30 space-y-3"
             >
-              {/* Round number */}
-              <div className="text-sm font-medium text-muted-foreground w-12 flex-shrink-0">
-                {move.round}
+              {/* Round number and guess */}
+              <div className="flex items-center gap-4">
+                <div className="text-sm font-medium text-muted-foreground w-12 flex-shrink-0">
+                  {move.round}
+                </div>
+                
+                {/* Guess - same size as input */}
+                <div className="flex gap-2 flex-1 justify-center">
+                  {codeToEmojis(move.guess).map((emoji, index) => (
+                    <div
+                      key={index}
+                      className="w-16 h-16 flex items-center justify-center text-2xl bg-background border-2 rounded-lg font-medium"
+                    >
+                      {emoji}
+                    </div>
+                  ))}
+                </div>
               </div>
               
-              {/* Guess - same size as input */}
-              <div className="flex gap-2 flex-1 justify-center">
-                {codeToEmojis(move.guess).map((emoji, index) => (
-                  <div
-                    key={index}
-                    className="w-16 h-16 flex items-center justify-center text-2xl bg-background border-2 rounded-lg font-medium"
-                  >
-                    {emoji}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Bulls and Cows */}
-              <div className="flex gap-2 flex-shrink-0">
+              {/* Bulls and Cows - underneath the emoji row */}
+              <div className="flex gap-2 justify-center">
                 <Badge variant="destructive" className="text-sm px-3 py-1">
                   🐂 {move.bulls}
                 </Badge>

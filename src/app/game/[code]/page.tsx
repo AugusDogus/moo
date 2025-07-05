@@ -653,7 +653,7 @@ export default function GamePage() {
                   {/* Game history */}
                   <GameBoard
                     moves={gameState.moves}
-                    playerId={gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id}
+                    playerId={session.user.id}
                     isCurrentPlayer={true}
                     showTitle={false}
                   />
@@ -664,7 +664,7 @@ export default function GamePage() {
                   {/* Your guesses */}
                   <GameBoard
                     moves={gameState.moves}
-                    playerId={gameState.isPlayer1 ? gameState.game.player1Id : gameState.game.player2Id}
+                    playerId={session.user.id}
                     isCurrentPlayer={true}
                   />
 
