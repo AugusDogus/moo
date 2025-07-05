@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DeleteAccountButton } from "~/components/auth/delete-account-button";
@@ -71,9 +72,12 @@ export default async function AccountPage() {
                   <p className="text-muted-foreground">
                     We collect minimal data to provide the gaming experience.
                     For more details, please review our{" "}
-                    <a href="/privacy" className="text-primary hover:underline">
+                    <Link
+                      href="/privacy"
+                      className="text-primary hover:underline"
+                    >
                       Privacy Policy
-                    </a>
+                    </Link>
                     .
                   </p>
                   <p className="text-muted-foreground">
@@ -90,9 +94,9 @@ export default async function AccountPage() {
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">
                     By using moo, you agree to our{" "}
-                    <a href="/tos" className="text-primary hover:underline">
+                    <Link href="/tos" className="text-primary hover:underline">
                       Terms of Service
-                    </a>
+                    </Link>
                     . Please review them to understand your rights and
                     responsibilities.
                   </p>

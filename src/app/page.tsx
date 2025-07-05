@@ -26,7 +26,7 @@ export default async function Home() {
                   </h1>
 
                   <p className="text-muted-foreground max-w-3xl text-lg">
-                    A multiplayer digital deduction puzzler
+                    a cozy cottage-core deduction game
                   </p>
 
                   <div className="text-4xl">🐮 🥛 🍄 🌸 🌿 🧺</div>
@@ -72,7 +72,7 @@ export default async function Home() {
                 </h1>
 
                 <p className="text-muted-foreground max-w-3xl text-lg">
-                  A multiplayer digital deduction puzzler
+                  a cozy cottage-core deduction game
                 </p>
 
                 <div className="text-4xl">🐮 🥛 🍄 🌸 🌿 🧺</div>

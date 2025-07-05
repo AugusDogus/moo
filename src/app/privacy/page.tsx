@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Footer } from "~/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
@@ -136,9 +137,12 @@ export default function PrivacyPolicy() {
                 </ul>
                 <p className="text-muted-foreground">
                   To delete your account, visit your{" "}
-                  <a href="/account" className="text-primary hover:underline">
+                  <Link
+                    href="/account"
+                    className="text-primary hover:underline"
+                  >
                     account settings
-                  </a>
+                  </Link>
                   . For other data requests or questions, please contact us at{" "}
                   <a
                     href="mailto:moo@augie.gg"
