@@ -32,8 +32,14 @@ export default function GameRoomPage() {
   );
 
   const joinRoom = api.game.joinRoom.useMutation({
-    onSuccess: (data: { gameId: string; roomId: string }) => {
-      router.push(`/game/play/${data.gameId}`);
+    onSuccess: (data: { gameId: string | null; roomId: string; isCreator: boolean }) => {
+      if (data.gameId) {
+        // There's an active game, go to it
+        router.push(`/game/play/${data.gameId}`);
+      } else {
+        // No active game, stay on room page (it will update automatically)
+        window.location.reload();
+      }
     },
     onError: (error: unknown) => {
       console.error("Failed to join room:", error);

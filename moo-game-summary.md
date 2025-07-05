@@ -238,7 +238,8 @@ const calculateBullsAndCows = (guess: string, secret: string) => {
 - **🚀 Auto-redirect**: After authentication, users are automatically redirected to their intended room
 - **🛡️ Role-based UI**: Different interfaces for room creators, existing players, and new visitors
 - **⚡ Auto-game-resume**: If users already have an active game, they're automatically redirected to it
-- **🎯 Prevents Errors**: Room creators can't accidentally try to join their own rooms
+- **� Smart Room Entry**: Room creators can enter their own room code from home page to return to their room
+- **🔄 Flexible Navigation**: "Enter Room" works for both joining new games and returning to your own rooms
 
 ### Enhanced User Experience
 - **📱 Better Loading States**: Clear feedback while room info and user roles are loading
