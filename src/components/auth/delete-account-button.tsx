@@ -63,10 +63,7 @@ export function DeleteAccountButton() {
           Once you delete your account, there is no going back. Please be
           certain.
         </p>
-        <Button
-          variant="destructive"
-          onClick={() => setShowConfirmation(true)}
-        >
+        <Button variant="destructive" onClick={() => setShowConfirmation(true)}>
           Delete my account
         </Button>
       </CardContent>
