@@ -19,6 +19,7 @@ This project is built with the following technologies:
 - [Drizzle](https://orm.drizzle.team) - Database ORM
 - [Tailwind CSS](https://tailwindcss.com) - Styling
 - [shadcn/ui](https://ui.shadcn.com) - UI components
+- [Matsu-theme](https://matsu-theme.vercel.app/) - Ghibli Studio inspired theme for shadcn/ui
 - [tRPC](https://trpc.io) - Type-safe APIs
 
 *This project was initially scaffolded using [create-t3-app](https://create.t3.gg/).*
