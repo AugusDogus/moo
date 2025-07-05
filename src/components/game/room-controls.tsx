@@ -62,8 +62,15 @@ export function JoinRoomCard() {
   const [isJoining, setIsJoining] = useState(false);
   
   const joinRoom = api.game.joinRoom.useMutation({
-    onSuccess: (data) => {
-      router.push(`/game/play/${data.gameId}`);
+    onSuccess: (data: { gameId: string | null; roomId: string; isCreator: boolean }) => {
+      if (data.gameId) {
+        // There's an active game, go to it
+        router.push(`/game/play/${data.gameId}`);
+      } else {
+        // No active game, go to room waiting page
+        // Extract room code from the roomCode state since we have it
+        router.push(`/game/room/${roomCode}`);
+      }
     },
     onError: (error: unknown) => {
       console.error("Failed to join room:", error);
@@ -92,7 +99,7 @@ export function JoinRoomCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center text-sm text-muted-foreground">
-          Enter a 4-letter room code to join an existing game
+          Enter a 4-letter room code to join or return to a game
         </div>
         
         <div className="space-y-2">
@@ -112,7 +119,7 @@ export function JoinRoomCard() {
           className="w-full"
           size="lg"
         >
-          {isJoining || joinRoom.isPending ? "Joining..." : "Join Room"}
+          {isJoining || joinRoom.isPending ? "Joining..." : "Enter Room"}
         </Button>
         
         {joinRoom.error && (

@@ -70,7 +70,7 @@ export const gameRouter = createTRPCRouter({
       return { roomId, code: roomCode };
     }),
 
-  // Join a game room
+  // Join a game room (or return to your own room)
   joinRoom: protectedProcedure
     .input(z.object({
       code: z.string().length(4),
@@ -90,17 +90,25 @@ export const gameRouter = createTRPCRouter({
         });
       }
       
+      // If user is the room creator, just return them to their room
+      if (room.createdBy === userId) {
+        // Check if there's already a game in this room
+        const existingGame = await ctx.db.query.games.findFirst({
+          where: eq(games.roomId, room.id),
+        });
+        
+        if (existingGame) {
+          return { gameId: existingGame.id, roomId: room.id, isCreator: true };
+        } else {
+          return { gameId: null, roomId: room.id, isCreator: true };
+        }
+      }
+      
+      // For non-creators, proceed with normal join logic
       if (room.status !== "waiting") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Room is not accepting new players",
-        });
-      }
-      
-      if (room.createdBy === userId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot join your own room",
         });
       }
       
@@ -139,7 +147,7 @@ export const gameRouter = createTRPCRouter({
         data: { player1Id: room.createdBy, player2Id: userId },
       } as GameUpdateEvent);
       
-      return { gameId, roomId: room.id };
+      return { gameId, roomId: room.id, isCreator: false };
     }),
 
   // Get game state
