@@ -1,4 +1,4 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, lt, or } from "drizzle-orm";
 import { db } from "~/server/db";
 import { gameRooms, games } from "~/server/db/schema";
 
@@ -26,7 +26,10 @@ export async function cleanupEmptyRooms() {
     for (const room of emptyRooms) {
       // Double-check there are no active games in this room before deletion
       const activeGame = await db.query.games.findFirst({
-        where: and(eq(games.roomId, room.id), eq(games.status, "playing")),
+        where: and(
+          eq(games.roomId, room.id),
+          or(eq(games.status, "playing"), eq(games.status, "code_selection")),
+        ),
       });
 
       if (!activeGame) {
