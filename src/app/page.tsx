@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 
+import { SignInButton } from "~/components/auth/sign-in-button";
+import { CreateRoomCard, JoinRoomCard } from "~/components/game/room-controls";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { auth } from "~/lib/auth/server";
 import { HydrateClient } from "~/trpc/server";
-import { CreateRoomCard, JoinRoomCard } from "~/components/game/room-controls";
-import { SignInButton } from "~/components/auth/sign-in-button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -19,7 +19,7 @@ export default async function Home() {
             <div className="flex flex-col items-center justify-center gap-12">
               <div className="space-y-4 text-center">
                 <h1 className="text-foreground font-serif text-5xl font-bold tracking-tight sm:text-6xl">
-                  <span className="text-primary">moo</span>
+                  <span className="text-primary font-serif">moo</span>
                 </h1>
 
                 <p className="text-muted-foreground max-w-3xl text-lg">
@@ -62,7 +62,7 @@ export default async function Home() {
           <div className="flex flex-col items-center justify-center gap-12">
             <div className="space-y-4 text-center">
               <h1 className="text-foreground font-serif text-5xl font-bold tracking-tight sm:text-6xl">
-                <span className="text-primary">moo</span>
+                <span className="text-primary font-serif">moo</span>
               </h1>
 
               <p className="text-muted-foreground max-w-3xl text-lg">
@@ -78,7 +78,7 @@ export default async function Home() {
               </p>
             </div>
 
-            <div className="grid w-full max-w-2xl gap-8 md:grid-cols-2">
+            <div className="grid w-full max-w-2xl justify-center gap-8 md:grid-cols-2">
               <CreateRoomCard />
               <JoinRoomCard />
             </div>
