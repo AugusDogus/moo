@@ -8,46 +8,31 @@ Refused to frame 'https://moo.augie.gg/' because it violates the following Conte
 
 ## Root Cause
 The issue occurs because:
-1. Your app is running in Discord's iframe context (served from `*.discordsays.com`)
-2. Your `discord-proxy.ts` is configured to proxy API requests to `moo.augie.gg`
-3. Discord's CSP doesn't allow framing content from `moo.augie.gg`
+1. Discord is trying to frame the entire `moo.augie.gg` domain directly
+2. `moo.augie.gg` is not in Discord's CSP allowlist for `frame-src`
+3. Your `discord-proxy.ts` configuration is correct for API proxying (you need this for tRPC calls)
+4. The problem is likely in your Discord Developer Portal configuration
 
 ## Solution Options
 
-### Option 1: Use Discord's Embedded App SDK Properly (Recommended)
+### Option 1: Fix Discord Developer Portal Configuration (Recommended)
 
-When using Discord's embedded app SDK, your app should be configured to work within Discord's ecosystem:
+The issue is that your Discord app is configured to frame `moo.augie.gg` directly, which violates Discord's CSP. You need to host your app on a domain that Discord can proxy to.
 
-1. **Update your `discord-proxy.ts` configuration:**
-```typescript
-"use client";
-import { patchUrlMappings } from "@discord/embedded-app-sdk";
+1. **Deploy your app to a Discord-compatible domain:**
+   - Use Vercel, Netlify, or similar platform with a standard domain
+   - Ensure the domain doesn't conflict with Discord's CSP restrictions
+   - Example: `your-app.vercel.app` or `your-app.netlify.app`
 
-if (
-  typeof window !== "undefined" &&
-  window.location.hostname.endsWith(".discordsays.com")
-) {
-  // Remove the external domain mapping - this should proxy to the same origin
-  patchUrlMappings([{ prefix: "/api", target: window.location.origin }]);
-}
-```
-
-2. **Configure your Discord app in the Developer Portal:**
+2. **Update Discord Developer Portal:**
    - Go to https://discord.com/developers/applications
    - Select your app
-   - In the "Activities" section, ensure your app URL is properly configured
-   - The app should be hosted on a domain that Discord can proxy to
+   - In the "Activities" section, update the App URL to point to your new deployment
+   - Remove any references to `moo.augie.gg` as the main app URL
 
-### Option 2: Deploy Your App on Discord-Compatible Infrastructure
-
-**For Vercel/Netlify deployments:**
-1. Deploy your app to a subdomain that can be proxied by Discord
-2. Configure your Discord app to point to that deployment
-3. Update your `discord-proxy.ts` to not proxy to external domains
-
-**Example configuration:**
+3. **Keep your proxy configuration (it's correct):**
 ```typescript
-// src/lib/discord-proxy.ts
+// src/lib/discord-proxy.ts - Keep this as is!
 "use client";
 import { patchUrlMappings } from "@discord/embedded-app-sdk";
 
@@ -55,29 +40,36 @@ if (
   typeof window !== "undefined" &&
   window.location.hostname.endsWith(".discordsays.com")
 ) {
-  // Don't proxy to external domains, use relative paths
-  patchUrlMappings([{ prefix: "/api", target: "" }]);
+  patchUrlMappings([{ prefix: "/api", target: "moo.augie.gg" }]);
 }
 ```
 
-### Option 3: Remove External Domain Dependency
+### Option 2: Use Discord's Built-in Proxy System
 
-The simplest fix is to modify your proxy configuration to not try to reach external domains:
+If you must use `moo.augie.gg`, configure it through Discord's proxy system:
 
+1. **Update your client-side code to use `/.proxy/` prefix:**
 ```typescript
-// src/lib/discord-proxy.ts
-"use client";
-import { patchUrlMappings } from "@discord/embedded-app-sdk";
+// In your tRPC client configuration
+const apiUrl = isInDiscordIframe() ? "/.proxy/api" : "/api";
+```
 
-if (
-  typeof window !== "undefined" &&
-  window.location.hostname.endsWith(".discordsays.com")
-) {
-  // Remove the external domain mapping entirely
-  // This will use the same origin for API requests
-  patchUrlMappings([]);
+2. **Ensure your Next.js rewrites are correct:**
+```javascript
+// next.config.js (already correct)
+async rewrites() {
+  return [
+    {
+      source: "/.proxy/api/:path*",
+      destination: "https://moo.augie.gg/api/:path*",
+    },
+  ];
 }
 ```
+
+### Option 3: Whitelist Your Domain (Advanced)
+
+Contact Discord support to potentially whitelist `moo.augie.gg` in their CSP, though this is unlikely to be approved for custom domains.
 
 ## Discord Developer Portal Configuration
 
@@ -120,21 +112,12 @@ BETTER_AUTH_URL=https://your-app-domain.com
 - The `/.proxy/` prefix in your rewrites should handle the proxying correctly
 - Make sure your app is deployed and accessible from the configured domain
 
-## Quick Fix Implementation
+## Immediate Action Required
 
-The immediate fix is to update your `discord-proxy.ts`:
+The issue is that Discord is trying to frame `moo.augie.gg` directly, which violates Discord's CSP. The quickest fix is:
 
-```typescript
-"use client";
-import { patchUrlMappings } from "@discord/embedded-app-sdk";
+1. **Deploy your app to a standard hosting platform** (Vercel, Netlify, etc.)
+2. **Update your Discord app configuration** in the Developer Portal to point to the new deployment
+3. **Keep your existing proxy configuration** - it's correct for API calls
 
-if (
-  typeof window !== "undefined" &&
-  window.location.hostname.endsWith(".discordsays.com")
-) {
-  // Fix: Don't proxy to external domains
-  patchUrlMappings([{ prefix: "/api", target: "" }]);
-}
-```
-
-This should resolve the CSP error immediately.
+Your current setup with `patchUrlMappings([{ prefix: "/api", target: "moo.augie.gg" }])` is correct for tRPC calls and should not be changed.
