@@ -5,5 +5,7 @@ if (
   typeof window !== "undefined" &&
   window.location.hostname.endsWith(".discordsays.com")
 ) {
-  patchUrlMappings([{ prefix: "/api", target: "moo.augie.gg" }]);
+  // Fix: Don't proxy to external domains that aren't in Discord's CSP
+  // This will use the same origin for API requests
+  patchUrlMappings([{ prefix: "/api", target: "" }]);
 }
