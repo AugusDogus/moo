@@ -31,11 +31,10 @@ export async function POST(request: Request): Promise<Response> {
 
     // Use the proxy prefix for the callback URL to avoid CSP issues
     // This keeps the navigation within the Discord iframe context
-    const callbackUrl = new URL("/.proxy/api/auth/callback/discord", "https://placeholder.com");
-    callbackUrl.searchParams.set("code", body.code);
+    const redirectUrl = `/.proxy/api/auth/callback/discord?code=${encodeURIComponent(body.code)}`;
 
     const response: AuthResponse = {
-      redirectUrl: callbackUrl.pathname + callbackUrl.search,
+      redirectUrl,
       success: true,
     };
 
