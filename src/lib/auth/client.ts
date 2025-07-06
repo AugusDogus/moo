@@ -8,7 +8,7 @@ export const signIn = async () => {
   if (isInDiscordIframe()) {
     return await signInWithDiscordSDK();
   }
-  
+
   // Use normal OAuth flow
   await authClient.signIn.social({
     provider: "discord",
@@ -18,8 +18,11 @@ export const signIn = async () => {
 export const signInWithDiscordSDK = async () => {
   try {
     // Step 1: Get authorization code from Discord SDK
-    const { code, state } = await authorizeWithDiscordSDK();
-    
+    const { code, state } = (await authorizeWithDiscordSDK()) as {
+      code: string;
+      state: string;
+    };
+
     // Step 2: Get redirect URL from our endpoint
     const response = await fetch("/.proxy/api/auth/discord-sdk", {
       method: "POST",
@@ -33,8 +36,8 @@ export const signInWithDiscordSDK = async () => {
       throw new Error("Failed to process Discord SDK authorization");
     }
 
-    const { redirectUrl } = await response.json();
-    
+    const { redirectUrl } = (await response.json()) as { redirectUrl: string };
+
     // Step 3: Navigate to the Discord callback URL
     // This will trigger the normal Discord OAuth flow in Better Auth
     window.location.href = redirectUrl;
