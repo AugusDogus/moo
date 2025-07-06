@@ -11,7 +11,7 @@ const tourSteps: TourStep[] = [
       <div className="space-y-2">
         <h4 className="font-medium">Welcome to moo! 🐮</h4>
         <p className="text-sm text-muted-foreground">
-          This is your cozy cottage-core deduction game. Let's learn how to play!
+          This is your cozy cottage-core deduction game. Let&apos;s learn how to play!
         </p>
       </div>
     ),
@@ -59,7 +59,7 @@ const tourSteps: TourStep[] = [
       <div className="space-y-2">
         <h4 className="font-medium">How to Play</h4>
         <p className="text-sm text-muted-foreground">
-          In moo, you'll try to crack your opponent's 4-emoji code! You'll get "bulls" for correct emojis in the right position and "cows" for correct emojis in the wrong position. Good luck! 🍀
+          In moo, you&apos;ll try to crack your opponent&apos;s 4-emoji code! You&apos;ll get &quot;bulls&quot; for correct emojis in the right position and &quot;cows&quot; for correct emojis in the wrong position. Good luck! 🍀
         </p>
       </div>
     ),
@@ -69,7 +69,7 @@ const tourSteps: TourStep[] = [
 ];
 
 export function TourManager() {
-  const { setSteps, startTour, endTour } = useTour();
+  const { setSteps, startTour } = useTour();
   const [showTourDialog, setShowTourDialog] = useState(false);
   
   const { data: tourStatus, isLoading: isLoadingTourStatus } = api.user.getTourStatus.useQuery();
@@ -92,16 +92,8 @@ export function TourManager() {
     }
   }, [tourStatus, isLoadingTourStatus]);
 
-  const handleTourComplete = () => {
-    updateTourStatus.mutate({ status: "completed" });
-  };
-
   const handleTourSkip = () => {
     updateTourStatus.mutate({ status: "skipped" });
-  };
-
-  const handleTourRemindLater = () => {
-    updateTourStatus.mutate({ status: "remind_later" });
   };
 
   return (
