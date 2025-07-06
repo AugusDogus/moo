@@ -38,7 +38,7 @@ export const authorizeWithDiscordSDK = async () => {
   
   try {
     // Pop open the OAuth permission modal and request for access to scopes
-    const { code } = await sdk.commands.authorize({
+    const { code, state } = await sdk.commands.authorize({
       client_id: env.NEXT_PUBLIC_DISCORD_CLIENT_ID,
       response_type: "code",
       state: "",
@@ -46,25 +46,10 @@ export const authorizeWithDiscordSDK = async () => {
       scope: ["identify", "email"],
     });
     
-    return code;
+    return { code, state };
   } catch (error) {
     console.error("Discord SDK authorization failed:", error);
     throw error;
   }
 };
 
-export const authenticateWithDiscordSDK = async (accessToken: string) => {
-  const sdk = await setupDiscordSDK();
-  
-  try {
-    // Authenticate with Discord client (using the access_token)
-    const auth = await sdk.commands.authenticate({
-      access_token: accessToken,
-    });
-    
-    return auth;
-  } catch (error) {
-    console.error("Discord SDK authentication failed:", error);
-    throw error;
-  }
-};
