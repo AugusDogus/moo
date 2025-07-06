@@ -1,5 +1,5 @@
 import { createAuthClient } from "better-auth/react";
-import { authorizeWithDiscordSDK, authenticateWithDiscordSDK, isInDiscordIframe } from "~/lib/discord-sdk";
+import { authorizeWithDiscordSDK, isInDiscordIframe } from "~/lib/discord-sdk";
 
 export const authClient = createAuthClient();
 
@@ -18,28 +18,26 @@ export const signIn = async () => {
 export const signInWithDiscordSDK = async () => {
   try {
     // Step 1: Get authorization code from Discord SDK
-    const code = await authorizeWithDiscordSDK();
+    const { code, state } = await authorizeWithDiscordSDK();
     
-    // Step 2: Exchange code for access token and create session
+    // Step 2: Get redirect URL from our endpoint
     const response = await fetch("/.proxy/api/auth/discord-sdk", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, state }),
     });
 
     if (!response.ok) {
-      throw new Error("Failed to authenticate with Discord SDK");
+      throw new Error("Failed to process Discord SDK authorization");
     }
 
-    const { access_token } = await response.json();
+    const { redirectUrl } = await response.json();
     
-    // Step 3: Authenticate with Discord SDK
-    await authenticateWithDiscordSDK(access_token);
-    
-    // Reload the page to reflect the new auth state
-    window.location.reload();
+    // Step 3: Navigate to the Discord callback URL
+    // This will trigger the normal Discord OAuth flow in Better Auth
+    window.location.href = redirectUrl;
   } catch (error) {
     console.error("Discord SDK sign-in failed:", error);
     throw error;
