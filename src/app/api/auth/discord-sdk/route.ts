@@ -29,15 +29,13 @@ export async function POST(request: Request): Promise<Response> {
       throw new Error("BETTER_AUTH_URL is not configured");
     }
 
-    // Redirect to the existing Discord callback with the authorization code
-    // This leverages the existing Discord provider in Better Auth
-    const callbackUrl = new URL(
-      `${env.BETTER_AUTH_URL}/api/auth/callback/discord`,
-    );
+    // Use the proxy prefix for the callback URL to avoid CSP issues
+    // This keeps the navigation within the Discord iframe context
+    const callbackUrl = new URL("/.proxy/api/auth/callback/discord", "https://placeholder.com");
     callbackUrl.searchParams.set("code", body.code);
 
     const response: AuthResponse = {
-      redirectUrl: callbackUrl.toString(),
+      redirectUrl: callbackUrl.pathname + callbackUrl.search,
       success: true,
     };
 
