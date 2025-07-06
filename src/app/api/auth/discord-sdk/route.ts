@@ -1,16 +1,32 @@
 import { env } from "~/env";
 
-export async function POST(request: Request) {
-  try {
-    const { code } = (await request.json()) as {
-      code: string;
-    };
+interface AuthRequest {
+  code: string;
+}
 
-    if (!code) {
+interface AuthResponse {
+  redirectUrl: string;
+  success: boolean;
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+export async function POST(request: Request): Promise<Response> {
+  try {
+    const body = await request.json() as AuthRequest;
+    
+    if (!body.code || typeof body.code !== "string") {
       return Response.json(
-        { error: "Missing authorization code" },
+        { error: "Missing or invalid authorization code" } satisfies ErrorResponse,
         { status: 400 },
       );
+    }
+
+    // Validate environment variables
+    if (!env.BETTER_AUTH_URL) {
+      throw new Error("BETTER_AUTH_URL is not configured");
     }
 
     // Redirect to the existing Discord callback with the authorization code
@@ -18,14 +34,19 @@ export async function POST(request: Request) {
     const callbackUrl = new URL(
       `${env.BETTER_AUTH_URL}/api/auth/callback/discord`,
     );
-    callbackUrl.searchParams.set("code", code);
+    callbackUrl.searchParams.set("code", body.code);
 
-    return Response.json({
+    const response: AuthResponse = {
       redirectUrl: callbackUrl.toString(),
       success: true,
-    });
+    };
+
+    return Response.json(response);
   } catch (error) {
     console.error("Discord SDK auth error:", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json(
+      { error: "Internal server error" } satisfies ErrorResponse, 
+      { status: 500 }
+    );
   }
 }

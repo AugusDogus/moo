@@ -5,20 +5,25 @@ import { env } from "~/env";
 
 let discordSdk: DiscordSDK | null = null;
 
-export const getDiscordSDK = () => {
+export const getDiscordSDK = (): DiscordSDK => {
+  // Validate client ID
+  if (typeof env.NEXT_PUBLIC_DISCORD_CLIENT_ID !== "string") {
+    throw new Error("Must specify NEXT_PUBLIC_DISCORD_CLIENT_ID");
+  }
+
   // Initialize the Discord SDK only once
   discordSdk ??= new DiscordSDK(env.NEXT_PUBLIC_DISCORD_CLIENT_ID);
   return discordSdk;
 };
 
-export const isInDiscordIframe = () => {
+export const isInDiscordIframe = (): boolean => {
   if (typeof window === "undefined") return false;
 
   // Check if we're in Discord's iframe by checking the hostname
   return window.location.hostname.endsWith(".discordsays.com");
 };
 
-export const setupDiscordSDK = async () => {
+export const setupDiscordSDK = async (): Promise<DiscordSDK> => {
   const sdk = getDiscordSDK();
 
   try {
@@ -31,7 +36,7 @@ export const setupDiscordSDK = async () => {
   }
 };
 
-export const authorizeWithDiscordSDK = async () => {
+export const authorizeWithDiscordSDK = async (): Promise<{ code: string }> => {
   const sdk = await setupDiscordSDK();
 
   try {
@@ -41,7 +46,13 @@ export const authorizeWithDiscordSDK = async () => {
       response_type: "code",
       state: "",
       prompt: "none",
-      scope: ["identify", "email"],
+      scope: [
+        "identify",
+        "email",
+        // Add other scopes as needed for Discord activities
+        // "applications.commands",
+        // "rpc.activities.write",
+      ],
     });
 
     return { code };

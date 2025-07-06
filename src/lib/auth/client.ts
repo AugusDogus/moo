@@ -3,7 +3,7 @@ import { authorizeWithDiscordSDK, isInDiscordIframe } from "~/lib/discord-sdk";
 
 export const authClient = createAuthClient();
 
-export const signIn = async () => {
+export const signIn = async (): Promise<void> => {
   // Check if we're in Discord's iframe
   if (isInDiscordIframe()) {
     return await signInWithDiscordSDK();
@@ -15,7 +15,16 @@ export const signIn = async () => {
   });
 };
 
-export const signInWithDiscordSDK = async () => {
+interface AuthResponse {
+  redirectUrl: string;
+  success: boolean;
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+export const signInWithDiscordSDK = async (): Promise<void> => {
   try {
     // Step 1: Get authorization code from Discord SDK
     const { code } = await authorizeWithDiscordSDK();
@@ -30,10 +39,15 @@ export const signInWithDiscordSDK = async () => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to process Discord SDK authorization");
+      const errorData = (await response.json()) as ErrorResponse;
+      throw new Error(`Failed to process Discord SDK authorization: ${errorData.error}`);
     }
 
-    const { redirectUrl } = (await response.json()) as { redirectUrl: string };
+    const { redirectUrl } = (await response.json()) as AuthResponse;
+
+    if (!redirectUrl || typeof redirectUrl !== "string") {
+      throw new Error("Invalid redirect URL received from server");
+    }
 
     // Step 3: Navigate to the Discord callback URL
     // This will trigger the normal Discord OAuth flow in Better Auth
@@ -44,7 +58,7 @@ export const signInWithDiscordSDK = async () => {
   }
 };
 
-export const signOut = async () => {
+export const signOut = async (): Promise<void> => {
   await authClient.signOut({
     fetchOptions: {
       onSuccess: () => {
@@ -54,7 +68,7 @@ export const signOut = async () => {
   });
 };
 
-export const deleteUser = async () => {
+export const deleteUser = async (): Promise<void> => {
   await authClient.deleteUser({
     fetchOptions: {
       onSuccess: () => {
