@@ -24,11 +24,6 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    // Validate environment variables
-    if (!env.BETTER_AUTH_URL) {
-      throw new Error("BETTER_AUTH_URL is not configured");
-    }
-
     // Use the proxy prefix for the callback URL to avoid CSP issues
     // This keeps the navigation within the Discord iframe context
     const redirectUrl = `/.proxy/api/auth/callback/discord?code=${encodeURIComponent(body.code)}`;
