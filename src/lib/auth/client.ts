@@ -18,10 +18,7 @@ export const signIn = async () => {
 export const signInWithDiscordSDK = async () => {
   try {
     // Step 1: Get authorization code from Discord SDK
-    const { code, state } = (await authorizeWithDiscordSDK()) as {
-      code: string;
-      state: string;
-    };
+    const { code } = await authorizeWithDiscordSDK();
 
     // Step 2: Get redirect URL from our endpoint
     const response = await fetch("/.proxy/api/auth/discord-sdk", {
@@ -29,7 +26,7 @@ export const signInWithDiscordSDK = async () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code, state }),
+      body: JSON.stringify({ code }),
     });
 
     if (!response.ok) {
