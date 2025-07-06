@@ -2,9 +2,8 @@ import { env } from "~/env";
 
 export async function POST(request: Request) {
   try {
-    const { code, state } = (await request.json()) as {
+    const { code } = (await request.json()) as {
       code: string;
-      state: string;
     };
 
     if (!code) {
@@ -20,9 +19,6 @@ export async function POST(request: Request) {
       `${env.BETTER_AUTH_URL}/api/auth/callback/discord`,
     );
     callbackUrl.searchParams.set("code", code);
-    if (state) {
-      callbackUrl.searchParams.set("state", state);
-    }
 
     return Response.json({
       redirectUrl: callbackUrl.toString(),
