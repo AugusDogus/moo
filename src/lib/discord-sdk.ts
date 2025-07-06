@@ -46,7 +46,7 @@ export const authorizeWithDiscordSDK = async () => {
 
     return {
       code: result.code,
-      state: result.state || "",
+      state: (result.state as string) ?? "",
     };
   } catch (error) {
     console.error("Discord SDK authorization failed:", error);
