@@ -7,6 +7,7 @@ import { Footer } from "~/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { auth } from "~/lib/auth/server";
 import { HydrateClient } from "~/trpc/server";
+import { TourManager } from "~/components/tour-manager";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -67,7 +68,7 @@ export default async function Home() {
           <div className="container mx-auto flex flex-1 items-center justify-center px-4 py-16">
             <div className="flex flex-col items-center justify-center gap-12">
               <div className="space-y-4 text-center">
-                <h1 className="text-foreground font-serif text-5xl font-bold tracking-tight sm:text-6xl">
+                <h1 id="tour-title" className="text-foreground font-serif text-5xl font-bold tracking-tight sm:text-6xl">
                   <span className="text-primary font-serif">moo</span>
                 </h1>
 
@@ -79,17 +80,30 @@ export default async function Home() {
               </div>
 
               <div className="flex justify-center">
-                <UserMenu user={session.user} />
+                <div id="tour-user-menu">
+                  <UserMenu user={session.user} />
+                </div>
               </div>
 
               <div className="grid w-full max-w-2xl justify-center gap-8 md:grid-cols-2">
-                <CreateRoomCard />
-                <JoinRoomCard />
+                <div id="tour-create-room">
+                  <CreateRoomCard />
+                </div>
+                <div id="tour-join-room">
+                  <JoinRoomCard />
+                </div>
+              </div>
+
+              <div id="tour-game-instructions" className="max-w-2xl text-center">
+                <p className="text-sm text-muted-foreground">
+                  Ready to play? Create a room or join one to start your cozy cottage-core deduction adventure!
+                </p>
               </div>
             </div>
           </div>
         </main>
         <Footer />
+        <TourManager />
       </div>
     </HydrateClient>
   );

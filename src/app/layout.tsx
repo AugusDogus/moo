@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { type Metadata } from "next";
 
 import { AuthRedirectHandler } from "~/components/auth/auth-redirect-handler";
+import { TourWrapper } from "~/components/tour-wrapper";
 import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -57,9 +58,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={cn(nunito.variable, ptSerif.variable, "antialiased")}>
         <TRPCReactProvider>
-          <AuthRedirectHandler />
-          <div className="texture" />
-          {children}
+          <TourWrapper>
+            <AuthRedirectHandler />
+            <div className="texture" />
+            {children}
+          </TourWrapper>
         </TRPCReactProvider>
         <Analytics />
       </body>

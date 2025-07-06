@@ -36,6 +36,7 @@ export const user = createTable("user", (d) => ({
     .$defaultFn(() => false)
     .notNull(),
   image: d.text(),
+  tourStatus: d.text().default("not_started").notNull(), // 'not_started', 'completed', 'skipped', 'remind_later'
   createdAt: d
     .integer({ mode: "timestamp" })
     .$defaultFn(() => new Date())
